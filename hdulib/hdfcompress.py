@@ -76,11 +76,15 @@ def create_dataset(hgroup, name, data, chunks=None):
     """
 
     num_types = ["float64", "float32", "int32", "int64",
-                 "complex64", "complex128"]
+                 "complex64", "complex128", 
+                 ">i4", ">i8", ">f4", ">f8"]
     num_types = set(num_types)
-
+    
+    
+    #print name, str(data.dtype)
     if str(data.dtype) in num_types and USE_BITSHUFFLE:
-        #print "Creating bitshuffle compressed %s" % name
+        #if name == 'FLUX':
+        #    data = data.astype('int32')
         create_compressed(hgroup, name, data, chunks)
     else:
         try:

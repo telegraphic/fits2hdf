@@ -18,6 +18,8 @@ if __name__ == '__main__':
         description  = 'Convert FITS files to HDF5 files in HDFITS format.')
     parser.add_option('-c', '--compression', dest='comp', type='string',
                       help='Data compression. Defaults to none, also lzf, bitshuffle, gzip') 
+    parser.add_option('-x', '--extension', dest='ext', type='string', default='fits',
+                      help='File extension of FITS files. Defaults to .fits')
     (opts, args) = parser.parse_args()
     if len(args) == 2:
         dir_in  = args[0]
@@ -32,13 +34,13 @@ if __name__ == '__main__':
 
     # Create list of files to process
     filelist = os.listdir(dir_in)
-    filelist = [fn for fn in filelist if fn.endswith('.fits')]
+    filelist = [fn for fn in filelist if fn.endswith(opts.ext)]
 
     t1 = time.time()
     file_count = 0
     for filename in filelist:
         file_in = os.path.join(dir_in, filename)
-        file_out = os.path.join(dir_out, filename.split('.fits')[0] + '.h5')
+        file_out = os.path.join(dir_out, filename.split(opts.ext)[0] + 'h5')
 
         a = IdiList(verbosity=0)
         try:

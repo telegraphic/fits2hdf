@@ -14,8 +14,8 @@ import pandas as pd
 import h5py
 import pyfits as pf
 
-from lib.printlog import PrintLog
-import lib.hdfcompress as bs
+from hdulib.printlog import PrintLog
+import hdulib.hdfcompress as bs
 
 class VerificationError(Exception):
     """ Custom data verification exception """
@@ -284,17 +284,19 @@ class IdiList(dict):
             gg = h.create_group(gkey)
             hg = gg.create_group("HEADER")
 
-
             if isinstance(self[gkey], IdiTable):
+                
+                self.pp.verbosity = 5
                 dg = gg.create_group("DATA")
                 for dkey, dval in self[gkey].data.items():
                     if dval.ndim != 2:
                         chunks=None
                     self.pp.debug("Adding col %s > %s" % (gkey, dkey))
+                    
                     try:
                         if compression == 'bitshuffle':
-
                             bs.create_dataset(dg, dkey, dval, chunks=chunks)
+                            
                         else:
                             dg.create_dataset(dkey, data=dval, compression=compression,
                                               shuffle=shuffle, chunks=chunks)
@@ -328,8 +330,6 @@ class IdiList(dict):
         """ Read and load contents of a FITS file """
 
         ff = pf.open(infile)
-        print infile
-
         self.fits = ff
 
         ii = 0
@@ -341,16 +341,21 @@ class IdiList(dict):
             header, history, comment = self.parse_fits_header(hdu)
             
             ImageHDU   = pf.hdu.ImageHDU
-            PrimaryHDU = pf.hdu.image.PrimaryHDU
+            PrimaryHDU = pf.hdu.PrimaryHDU
             GroupsHDU  = pf.hdu.GroupsHDU
-            
+                                                 
             if isinstance(hdu, ImageHDU) or isinstance(hdu, PrimaryHDU):
-                if hdu.data is None:
+                try:
+                    if hdu.data is None:
+                        self.add_primary(hdu.name,
+                                         header=header, history=history, comment=comment)
+                    else:
+                        self.add_image(hdu.name, data=hdu.data[:],
+                                       header=header, history=history, comment=comment)
+                except TypeError:
+                    # Primary groups HDUs can raise this error with no data
                     self.add_primary(hdu.name,
-                                     header=header, history=history, comment=comment)
-                else:
-                    self.add_image(hdu.name, data=hdu.data[:],
-                                   header=header, history=history, comment=comment)
+                                     header=header, history=history, comment=comment)                    
 
             elif isinstance(hdu, GroupsHDU):
                 try:
@@ -361,8 +366,8 @@ class IdiList(dict):
                     # Primary groups HDUs can raise this error with no data
                     self.add_primary(hdu.name,
                                      header=header, history=history, comment=comment)
-            
             else:
+                # Data is tabular
                 data = {}
                 for key in hdu.data.names:
                     data[key] = hdu.data[key][:]
