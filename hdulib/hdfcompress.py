@@ -67,6 +67,8 @@ def create_compressed(hgroup, name, data, chunks=None):
 
     hgroup[name][:] = data
 
+    return hgroup[name]
+
 def create_dataset(hgroup, name, data, chunks=None):
     """ Create dataset from data, will attempt to compress
 
@@ -85,11 +87,14 @@ def create_dataset(hgroup, name, data, chunks=None):
     if str(data.dtype) in num_types and USE_BITSHUFFLE:
         #if name == 'FLUX':
         #    data = data.astype('int32')
-        create_compressed(hgroup, name, data, chunks)
+        dset = create_compressed(hgroup, name, data, chunks)
     else:
         try:
             #print "Creating non-compressed %s" % name
-            hgroup.create_dataset(name, data=data)
+            dset = hgroup.create_dataset(name, data=data)
         except TypeError:
             #print name, data.dtype
             raise
+
+    return dset
+

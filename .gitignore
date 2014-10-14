@@ -22,10 +22,7 @@ var/
 .installed.cfg
 *.egg
 
-test/*.fits
-test/*.h5
-test/*.uvfits
-test/*.fitsidi
+
 
 # PyInstaller
 #  Usually these files are written by a python script from a template
@@ -58,4 +55,11 @@ docs/_build/
 # PyBuilder
 target/
 
+# test env
 .DS_Store
+.thumbs
+.idea
+*.fits
+*.h5
+*.uvfits
+*.fitsidi

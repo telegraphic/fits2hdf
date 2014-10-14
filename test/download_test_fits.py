@@ -2,7 +2,7 @@
 download_test_fits.py
 ---------------------
 
-This script downloads
+This script downloads sample FITS files from the NASA registry.
 
 Individual Sample FITS files
 http://fits.gsfc.nasa.gov/fits_samples.html
@@ -10,6 +10,12 @@ http://fits.gsfc.nasa.gov/fits_samples.html
 
 import os
 
+if not os.path.exists('fits'):
+    try:
+        os.mkdir('fits')
+    except:
+        pass
+        
 filelist = [
     'http://fits.gsfc.nasa.gov/samples/WFPC2u5780205r_c0fx.fits',
     'http://fits.gsfc.nasa.gov/samples/WFPC2ASSNu5780205bx.fits',
@@ -29,3 +35,4 @@ print "Downloading example files from FITS registry..."
 
 for filename in filelist:
     os.system('wget %s' % filename)
+    os.system('mv %s fits/' % filename.split('/')[-1])

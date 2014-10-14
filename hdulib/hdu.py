@@ -13,6 +13,7 @@ import numpy as np
 import pandas as pd
 import h5py
 import pyfits as pf
+from datetime import datetime
 
 from hdulib.printlog import PrintLog
 import hdulib.hdfcompress as bs
@@ -20,6 +21,7 @@ import hdulib.hdfcompress as bs
 class VerificationError(Exception):
     """ Custom data verification exception """
     pass
+
 
 class IdiHeader(object):
     """ Header unit for storing header information
@@ -48,6 +50,7 @@ class IdiHeader(object):
 
     def __repr__(self):
         return "IdiHeader: %s" % self.vals
+
 
 class IdiPrimary(object):
     """ Header-data unit for storing table data
@@ -112,17 +115,21 @@ class IdiTable(object):
         self.header = IdiHeader(header, comment, history)
         self.data   = {}
         self.n_rows = 0
+        self.n_cols = 0
 
         if data is not None:
-            self.data = data
-            self.n_rows = data[data.keys()[0]].shape[0]
+            for col in data:
+                self.n_cols += 1
+                self.add_column(col)
+            #self.data = data
+            #self.n_rows = data[0][1].shape[0]
 
         self.pp = PrintLog(verbosity=verbosity)
 
     def __repr__(self):
         return "IdiTable: %s" % self.name
 
-    def add_column(self, name, data=0, dtype=None):
+    def add_column(self, data, name='', dtype=None):
         """ Add a new column to the data unit
 
         name (str): name of column
@@ -133,19 +140,26 @@ class IdiTable(object):
         dtype (str): Data type to use (ignored if an array is passed)
         """
 
-        if type(data) is type(np.array([0])):
+        col_id = self.n_cols
+        if isinstance(data, IdiColumn):
+            name = data.name
+            self.data[name] = data
+
+        elif isinstance(data, np.ndarray):
+            if name == '':
+                raise RuntimeError("No column name supplied.")
             try:
-                if len(self.data.keys()) == 0:
+                if len(self.data) == 0:
                     self.n_rows = data.shape[0]
                 assert data.shape[0] == self.n_rows
             except AssertionError:
                 msg = "Data len %i does not match n_rows %i" % (data.shape[0], self.n_rows)
                 raise RuntimeError(msg)
 
-            self.data[name] = data
+            self.data[name] = IdiColumn(name, data, col_num=col_id)
 
         elif type(data) is list:
-            self.data[name] = np.array(data)
+            self.data[name] = IdiColumn(name, np.array(data), col_num=col_id)
 
         elif type(data) is dict:
             pass
@@ -158,7 +172,7 @@ class IdiTable(object):
                 self.n_rows = 1
             if dtype is None:
                 dtype = type(data)
-            self.data[name] = np.array([data] * self.n_rows, dtype=dtype)
+            self.data[name] = IdiColumn(name, np.array([data] * self.n_rows, dtype=dtype), col_num=col_id)
 
     def verify(self):
         for key in self.data.keys():
@@ -190,6 +204,31 @@ class IdiTable(object):
         dataframe = pd.DataFrame(dict(zip(keys, vals)))
         return dataframe
 
+
+class IdiColumn(object):
+    """ Column unit for storing columnular dataset
+
+    stores header dictionary and data dictionary
+
+    name (str):    name of HDU
+    data:
+    units:
+
+    """
+    def __init__(self, name, data, col_num, units=None, dtype=None):
+        self.name   = name
+        self.data   = data
+        self.units  = units
+        self.col_num = col_num
+
+        if dtype:
+            self.dtype = dtype
+        else:
+            self.dtype   = data.dtype
+
+    def __repr__(self):
+        uu = " " if self.units is None else self.units
+        return "IdiColumn: %02i %16s %08s %s \n" % (self.col_num, self.name, self.dtype, uu)
 
 class IdiList(dict):
     """ Header-Data Unit list (actually a dictionary) """
@@ -229,6 +268,15 @@ class IdiList(dict):
         h = h5py.File(infile, mode=mode)
         self.pp.debug(h.items())
 
+        # See if this is a HDFITS file. Raise warnings if not, but still try to read
+        cls = "None"
+        try:
+            cls = h.attrs["CLASS"]
+        except KeyError:
+            self.pp.warn("No CLASS defined in HDF5 file.")
+        if "HDFITS" not in cls:
+            self.pp.warn("CLASS %s: Not an HDFITS file." % cls[0])
+
         for gname, group in h.items():
             self.pp.h2("Reading %s" % gname)
 
@@ -247,10 +295,7 @@ class IdiList(dict):
 
                 for dname, dset in group["DATA"].items():
                     self.pp.debug("Reading col %s > %s" %(gname, dname))
-                    if dname == 'FLUX':
-                        self[gname].data[dname] = dset[:,]
-                    else:
-                        self[gname].data[dname] = dset[:]
+                    self[gname].data[dname] = dset[:]
                     self[gname].n_rows = dset.shape[0]
 
             else:
@@ -277,29 +322,45 @@ class IdiList(dict):
 
         h = h5py.File(outfile, mode='w')
 
+        print outfile
         self.hdf = h
+
+        self.hdf.attrs["CLASS"] = np.array(["HDFITS"])
 
         for gkey in self.keys():
             self.pp.h2("Creating %s" % gkey)
             gg = h.create_group(gkey)
+
+            gg.attrs["CLASS"] = np.array(["HDU"])
             hg = gg.create_group("HEADER")
 
             if isinstance(self[gkey], IdiTable):
                 
-                self.pp.verbosity = 5
+                #self.pp.verbosity = 5
                 dg = gg.create_group("DATA")
+                dg.attrs["CLASS"] = np.array(["TABLE"])
                 for dkey, dval in self[gkey].data.items():
-                    if dval.ndim != 2:
-                        chunks=None
+
+                    data = dval.data
+                    if data.ndim != 2:
+                        chunks = None
                     self.pp.debug("Adding col %s > %s" % (gkey, dkey))
                     
                     try:
                         if compression == 'bitshuffle':
-                            bs.create_dataset(dg, dkey, dval, chunks=chunks)
+                            dset = bs.create_dataset(dg, dkey, data, chunks=chunks)
                             
                         else:
-                            dg.create_dataset(dkey, data=dval, compression=compression,
+                            dset = dg.create_dataset(dkey, data=data, compression=compression,
                                               shuffle=shuffle, chunks=chunks)
+
+                        dset.attrs["CLASS"] = np.array(["COLUMN"])
+                        dset.attrs["COLUMN_ID"] = np.array([dval.col_num])
+
+                        if dval.units:
+                            dset.attrs["UNITS"] = np.array([dval.units])
+
+
                     except:
                         self.pp.err("%s > %s" % (gkey, dkey))
                         raise
@@ -307,17 +368,26 @@ class IdiList(dict):
             elif isinstance(self[gkey], IdiImage):
                 self.pp.debug("Adding %s > DATA" % gkey)
                 if compression == 'bitshuffle':
-                    bs.create_dataset(gg, "DATA", self[gkey].data)
+                    dset = bs.create_dataset(gg, "DATA", self[gkey].data)
                 else:
-                    gg.create_dataset("DATA", data=self[gkey].data, compression=compression,
+                    dset = gg.create_dataset("DATA", data=self[gkey].data, compression=compression,
                                       shuffle=shuffle, chunks=chunks)
+
+                    # Add image-specific attributes
+                    dset.attrs["CLASS"] = np.array(["IMAGE"])
+                    dset.attrs["IMAGE_VERSION"] = np.array(["1.2"])
+                    if self[gkey].data.ndim == 2:
+                        dset.attrs["IMAGE_SUBCLASS"] = np.array(["IMAGE_GRAYSCALE"])
+                        dset.attrs["IMAGE_MINMAXRANGE"] = np.array([np.min(self[gkey].data), np.max(self[gkey].data)])
 
             elif isinstance(self[gkey], IdiPrimary):
                 pass
 
+
+            # Add header values
             for hkey, hval in self[gkey].header.vals.items():
                 self.pp.debug("Adding header %s > %s" % (hkey, hval))
-                hg.attrs[hkey] = hval
+                hg.attrs[hkey] = np.array([hval])
 
             if self[gkey].header.comment:
                 hg.create_dataset("COMMENT", data=self[gkey].header.comment)
@@ -338,7 +408,7 @@ class IdiList(dict):
                 hdu.name = "HDU%i" % ii
                 ii += 1
 
-            header, history, comment = self.parse_fits_header(hdu)
+            header, history, comment = parse_fits_header(hdu)
             
             ImageHDU   = pf.hdu.ImageHDU
             PrimaryHDU = pf.hdu.PrimaryHDU
@@ -349,52 +419,124 @@ class IdiList(dict):
                     if hdu.data is None:
                         self.add_primary(hdu.name,
                                          header=header, history=history, comment=comment)
-                    else:
+                    elif not isinstance(hdu, GroupsHDU):
                         self.add_image(hdu.name, data=hdu.data[:],
+                                       header=header, history=history, comment=comment)
+                    else:
+                        # We have a random group table, yuck
+                        self.add_table(hdu.name, data=hdu.data[:],
                                        header=header, history=history, comment=comment)
                 except TypeError:
                     # Primary groups HDUs can raise this error with no data
                     self.add_primary(hdu.name,
                                      header=header, history=history, comment=comment)                    
 
-            elif isinstance(hdu, GroupsHDU):
-                try:
-                    data = hdu.data
-                    self.add_table(hdu.name, data=hdu.data[:],
-                                   header=header, history=history, comment=comment)
-                except TypeError:
-                    # Primary groups HDUs can raise this error with no data
-                    self.add_primary(hdu.name,
-                                     header=header, history=history, comment=comment)
+            #elif isinstance(hdu, GroupsHDU):
+            #    try:
+            #        data = hdu.data
+            #        self.add_table(hdu.name, data=hdu.data[:],
+            #                       header=header, history=history, comment=comment)
+            #    except TypeError:
+            #        # Primary groups HDUs can raise this error with no data
+            #        self.add_primary(hdu.name,
+            #                         header=header, history=history, comment=comment)
             else:
                 # Data is tabular
-                data = {}
+                data = []
+                col_num = 1
                 for key in hdu.data.names:
-                    data[key] = hdu.data[key][:]
+                    col_units = None
+                    try:
+                        col_units = hdu.header["TUNIT%i" % col_num]
+                        #print col_units
+                    except KeyError:
+                        pass
+                    idi_col = IdiColumn(key, hdu.data[key][:], col_num, units=col_units)
+                    data.append(idi_col)
+                    col_num += 1
                 self.add_table(hdu.name,
                                header=header, data=data, history=history, comment=comment)
 
-    def parse_fits_header(self, hdu):
-        """ Parse a FITS header into something less stupid """
+    def export_fits(self, outfile):
+        """ Export to FITS file """
 
-        history  = []
-        comment = []
-        header   = {}
-        
-        hdu.verify('fix')
-        
-        for card in hdu.header.cards:
-            
-            card_id, card_val, card_comment = card
-            card_id = card_id.strip()
+        # Create a new hdulist
+        hdulist = pf.HDUList()
 
-            if card_id in (None, '', ' '):
+        # Create a new hdu for every item in IdiList
+        for name, idiobj in self.items():
+            print name, idiobj
+
+            if isinstance(idiobj, IdiPrimary):
+                    hdu = pf.PrimaryHDU()
+                    hdu = write_headers(hdu, idiobj)
+                    hdulist.insert(0, hdu)
+
+            elif isinstance(idiobj, IdiImage):
+                if name == "PRIMARY":
+                    hdu = pf.PrimaryHDU()
+                    hdu = write_headers(hdu, idiobj)
+                    hdu.data = idiobj.data
+                    hdulist.insert(0, hdu)
+                else:
+                    hdu = pf.ImageHDU()
+                    hdu.name = name
+
+            elif isinstance(idiobj, IdiTable):
+                # Need special care in case it is a random group
                 pass
-            elif card_id == "HISTORY":
-                history.append(card_val)
-            elif card_id == "COMMENT":
-                comment.append(card_val)
-            else:
-                header[card_id] = card_val
 
-        return header, comment, history
+        # Add creation info to history
+        now = datetime.now()
+        now_str = now.strftime("%Y-%M-%dT%H:%M")
+        hdulist[0].header.add_history("File written by fits2hdf %s" %now_str)
+
+        # Write to file
+        hdulist.writeto(outfile)
+
+
+
+def write_headers(hduobj, idiobj):
+    """ copy headers over from idiobj to hduobj
+
+    TODO: FITS header cards have to be written in correct order.
+    TODO: Need to do this a little more carefully
+    """
+
+    for key, value in idiobj.header.vals.items():
+        hduobj.header.update(key, value)
+
+    for histline in idiobj.header.history:
+        hduobj.header.add_history(histline)
+
+    for commline in idiobj.header.comment:
+        hduobj.header.add_comment(commline)
+
+    hduobj.verify('fix')
+    return hduobj
+
+def parse_fits_header(hdu):
+    """ Parse a FITS header into something less stupid """
+
+    history  = []
+    comment = []
+    header   = {}
+
+    hdu.verify('fix')
+
+    for card in hdu.header.cards:
+
+        card_id, card_val, card_comment = card
+        card_id = card_id.strip()
+
+        if card_id in (None, '', ' '):
+            pass
+        elif card_id == "HISTORY":
+            history.append(card_val)
+        elif card_id == "COMMENT":
+            comment.append(card_val)
+        else:
+            header[card_id] = card_val
+
+    return header, comment, history
+
