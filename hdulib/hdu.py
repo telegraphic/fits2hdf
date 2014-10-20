@@ -280,38 +280,57 @@ class IdiList(dict):
         for gname, group in h.items():
             self.pp.h2("Reading %s" % gname)
 
+            if "HISTORY" in group["HEADER"].keys():
+                history = group["HEADER"]["HISTORY"]
+            else:
+                history = None
+
+            if "COMMENT" in group["HEADER"].keys():
+                comment = group["HEADER"]["COMMENT"]
+            else:
+                comment = None
+
+            header = group["HEADER"].attrs
+
             self.pp.pp(group.keys())
             if "DATA" not in group:
                 hdu_type = "PRIMARY"
                 self.pp.h3("Adding Primary %s" % gname)
                 self.add_primary(gname)
 
-            elif "XTENSION" in group["HEADER"].attrs.keys():
-                hdu_type = group["HEADER"].attrs["XTENSION"]
-
-                if hdu_type in ("BINTABLE", "TABLE"):
-                    self.pp.h3("Adding Table %s" % gname)
-                    self.add_table(gname)
+            elif group["DATA"].attrs["CLASS"] == "TABLE":
+                self.pp.h3("Adding Table %s" % gname)
+                #self.add_table(gname)
+                data = []
 
                 for dname, dset in group["DATA"].items():
                     self.pp.debug("Reading col %s > %s" %(gname, dname))
-                    self[gname].data[dname] = dset[:]
-                    self[gname].n_rows = dset.shape[0]
 
-            else:
+                    #self[gname].data[dname] = dset[:]
+                    #self[gname].n_rows = dset.shape[0]
+                    try:
+                        col_units = dset.attrs["UNITS"]
+                    except:
+                        col_units = None
+                    col_num   = dset.attrs["COLUMN_ID"]
+
+                    idi_col = IdiColumn(dname, dset[:], col_num, units=col_units)
+                    data.append(idi_col)
+
+                self.add_table(gname,
+                               header=header, data=data, history=history, comment=comment)
+
+            elif group["DATA"].attrs["CLASS"] == "IMAGE":
                 self.pp.h3("Adding Image %s" % gname)
                 self.add_image(gname, data=group["DATA"][:])
 
+            else:
+                self.pp.warn("Cannot understand data class of %s" % gname)
             self.pp.debug(gname)
             self.pp.debug(self[gname].header)
             for hkey, hval in group["HEADER"].attrs.items():
                 self[gname].header.vals[hkey] = hval
 
-            if "HISTORY" in group["HEADER"].keys():
-                self[gname].header.history = group["HEADER"]["HISTORY"]
-
-            if "COMMENT" in group["HEADER"].keys():
-                self[gname].header.comment = group["HEADER"]["COMMENT"]
 
 
         h.close()
@@ -392,7 +411,7 @@ class IdiList(dict):
             if self[gkey].header.comment:
                 hg.create_dataset("COMMENT", data=self[gkey].header.comment)
             if self[gkey].header.history:
-                hg.create_dataset("HISTORY", data=self[gkey].header.comment)
+                hg.create_dataset("HISTORY", data=self[gkey].header.history)
 
         h.close()
 
@@ -412,14 +431,14 @@ class IdiList(dict):
             
             ImageHDU   = pf.hdu.ImageHDU
             PrimaryHDU = pf.hdu.PrimaryHDU
-            GroupsHDU  = pf.hdu.GroupsHDU
+            compHDU    = pf.hdu.CompImageHDU
                                                  
             if isinstance(hdu, ImageHDU) or isinstance(hdu, PrimaryHDU):
                 try:
-                    if hdu.data is None:
+                    if hdu.size == 0:
                         self.add_primary(hdu.name,
                                          header=header, history=history, comment=comment)
-                    elif not isinstance(hdu, GroupsHDU):
+                    elif hdu.is_image:
                         self.add_image(hdu.name, data=hdu.data[:],
                                        header=header, history=history, comment=comment)
                     else:
@@ -429,17 +448,10 @@ class IdiList(dict):
                 except TypeError:
                     # Primary groups HDUs can raise this error with no data
                     self.add_primary(hdu.name,
-                                     header=header, history=history, comment=comment)                    
-
-            #elif isinstance(hdu, GroupsHDU):
-            #    try:
-            #        data = hdu.data
-            #        self.add_table(hdu.name, data=hdu.data[:],
-            #                       header=header, history=history, comment=comment)
-            #    except TypeError:
-            #        # Primary groups HDUs can raise this error with no data
-            #        self.add_primary(hdu.name,
-            #                         header=header, history=history, comment=comment)
+                                     header=header, history=history, comment=comment)
+            elif isinstance(hdu, compHDU):
+                self.add_image(hdu.name, data=hdu.data[:],
+                               header=header, history=history, comment=comment)
             else:
                 # Data is tabular
                 data = []
@@ -536,7 +548,7 @@ def parse_fits_header(hdu):
         elif card_id == "COMMENT":
             comment.append(card_val)
         else:
-            header[card_id] = card_val
+            header[card_id] = np.array([card_val, card_comment])
 
     return header, comment, history
 

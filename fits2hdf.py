@@ -40,7 +40,7 @@ if __name__ == '__main__':
     file_count = 0
     for filename in filelist:
         file_in = os.path.join(dir_in, filename)
-        file_out = os.path.join(dir_out, filename.split(opts.ext)[0] + 'h5')
+        file_out = os.path.join(dir_out, filename.split('.' + opts.ext)[0] + '.h5')
 
         a = IdiList(verbosity=0)
         try:
