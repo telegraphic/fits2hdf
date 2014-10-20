@@ -507,7 +507,6 @@ class IdiList(dict):
         hdulist.writeto(outfile)
 
 
-
 def write_headers(hduobj, idiobj):
     """ copy headers over from idiobj to hduobj
 
