@@ -1,7 +1,7 @@
 import os, sys
 sys.path.append('..')
 
-from hdulib import hdu
+from hdulib import idi
 from ms2hdf import *
 import pylab as plt
 import numpy as np

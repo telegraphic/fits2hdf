@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-hdu.py
+idi.py
 ======
 
 Abstract class for python Header-Data unit object. This is similar
@@ -15,8 +15,10 @@ import h5py
 import pyfits as pf
 from datetime import datetime
 
+
 from hdulib.printlog import PrintLog
 import hdulib.hdfcompress as bs
+from hdulib import fitsio
 
 class VerificationError(Exception):
     """ Custom data verification exception """
@@ -415,97 +417,18 @@ class IdiList(dict):
 
         h.close()
 
-    def read_fits(self, infile, mode='r+'):
+    def read_fits(self, infile, mode='r+', verbosity=None):
         """ Read and load contents of a FITS file """
+        if verbosity is None:
+            verbosity = self.pp.vlevel
+        else:
+            self.pp.vlevel = verbosity
 
-        ff = pf.open(infile)
-        self.fits = ff
-
-        ii = 0
-        for hdu in ff:
-            if hdu.name in ('', None, ' '):
-                hdu.name = "HDU%i" % ii
-                ii += 1
-
-            header, history, comment = parse_fits_header(hdu)
-            
-            ImageHDU   = pf.hdu.ImageHDU
-            PrimaryHDU = pf.hdu.PrimaryHDU
-            compHDU    = pf.hdu.CompImageHDU
-                                                 
-            if isinstance(hdu, ImageHDU) or isinstance(hdu, PrimaryHDU):
-                try:
-                    if hdu.size == 0:
-                        self.add_primary(hdu.name,
-                                         header=header, history=history, comment=comment)
-                    elif hdu.is_image:
-                        self.add_image(hdu.name, data=hdu.data[:],
-                                       header=header, history=history, comment=comment)
-                    else:
-                        # We have a random group table, yuck
-                        self.add_table(hdu.name, data=hdu.data[:],
-                                       header=header, history=history, comment=comment)
-                except TypeError:
-                    # Primary groups HDUs can raise this error with no data
-                    self.add_primary(hdu.name,
-                                     header=header, history=history, comment=comment)
-            elif isinstance(hdu, compHDU):
-                self.add_image(hdu.name, data=hdu.data[:],
-                               header=header, history=history, comment=comment)
-            else:
-                # Data is tabular
-                data = []
-                col_num = 1
-                for key in hdu.data.names:
-                    col_units = None
-                    try:
-                        col_units = hdu.header["TUNIT%i" % col_num]
-                        #print col_units
-                    except KeyError:
-                        pass
-                    idi_col = IdiColumn(key, hdu.data[key][:], col_num, units=col_units)
-                    data.append(idi_col)
-                    col_num += 1
-                self.add_table(hdu.name,
-                               header=header, data=data, history=history, comment=comment)
+        self = fitsio.read_fits(infile, mode, verbosity)
 
     def export_fits(self, outfile):
         """ Export to FITS file """
-
-        # Create a new hdulist
-        hdulist = pf.HDUList()
-
-        # Create a new hdu for every item in IdiList
-        for name, idiobj in self.items():
-            print name, idiobj
-
-            if isinstance(idiobj, IdiPrimary):
-                    hdu = pf.PrimaryHDU()
-                    hdu = write_headers(hdu, idiobj)
-                    hdulist.insert(0, hdu)
-
-            elif isinstance(idiobj, IdiImage):
-                if name == "PRIMARY":
-                    hdu = pf.PrimaryHDU()
-                    hdu = write_headers(hdu, idiobj)
-                    hdu.data = idiobj.data
-                    hdulist.insert(0, hdu)
-                else:
-                    hdu = pf.ImageHDU()
-                    hdu.name = name
-
-            elif isinstance(idiobj, IdiTable):
-                # Need special care in case it is a random group
-                pass
-
-        # Add creation info to history
-        now = datetime.now()
-        now_str = now.strftime("%Y-%M-%dT%H:%M")
-        hdulist[0].header.add_history("File written by fits2hdf %s" %now_str)
-
-        # Write to file
-        hdulist.writeto(outfile)
-
+        fitsio.export_fits(self, outfile)
 
 def write_headers(hduobj, idiobj):
     """ copy headers over from idiobj to hduobj

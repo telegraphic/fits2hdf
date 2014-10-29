@@ -1,7 +1,7 @@
 import os, sys
 sys.path.append('..')
 
-from hdulib import hdu
+from hdulib import idi
 import pylab as plt
 import numpy as np
 import pyfits as pf
@@ -53,8 +53,8 @@ if __name__ == '__main__':
                 b.close()
 
                 # IDILIST based tests
-                c = hdu.IdiList()
-                d = hdu.IdiList()
+                c = idi.IdiList()
+                d = idi.IdiList()
 
                 c.read_fits('fits/' + fits_file)
                 d.read_hdf('hdf/' + hdf_file)
@@ -68,7 +68,7 @@ if __name__ == '__main__':
                     except AssertionError:
                         print "Test 03a: ERROR - both files do not have group  %s" % name
                     all_match = True
-                    if isinstance(group, hdu.IdiTable):
+                    if isinstance(group, idi.IdiTable):
                         for dc, dd in group.data.items():
                             assert dc in group2.data
                             try:
