@@ -11,14 +11,10 @@ DataFrame object, and there are a few view / verify items also.
 
 import numpy as np
 import pandas as pd
-import h5py
-import pyfits as pf
-from datetime import datetime
 
-
+from hdulib.io import fitsio, hdfio
 from hdulib.printlog import PrintLog
-import hdulib.hdfcompress as bs
-from hdulib import fitsio, hdfio
+
 
 class VerificationError(Exception):
     """ Custom data verification exception """

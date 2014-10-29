@@ -1,10 +1,10 @@
-import os, sys
+import os
+import sys
+
 sys.path.append('..')
 
-from hdulib import idi
-from hdulib.fitsio import *
-from hdulib.hdfio import *
-import pylab as plt
+from hdulib.io.fitsio import *
+from hdulib.io.hdfio import *
 import numpy as np
 import pyfits as pf
 import h5py

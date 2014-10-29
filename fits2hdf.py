@@ -6,10 +6,12 @@ fits2hdf.py
 FITS to HDF5 conversion utility. This script takes a 
 """
 
-import os, sys, time, re
+import os
+import time
 import optparse
+
 from hdulib.idi import IdiList
-from hdulib.fitsio import read_fits, export_fits
+
 
 if __name__ == '__main__':
     
