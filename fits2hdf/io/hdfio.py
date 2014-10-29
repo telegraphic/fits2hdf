@@ -1,17 +1,18 @@
 # -*- coding: utf-8 -*-
 """
-fitsio.py
+hdfio.py
 =========
 
-FITS I/O for reading and writing to FITS files.
+HDF I/O for reading and writing to HDF5 files.
 """
 
 import pyfits as pf
 import numpy as np
+import h5py
 
 
 from ..idi import *
-from ..fits2hdf import idi
+from .. import idi
 
 def read_hdf(infile, mode='r+', verbosity=0):
     """ Read and load contents of an HDF file """
