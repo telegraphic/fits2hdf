@@ -2,6 +2,8 @@ import os, sys
 sys.path.append('..')
 
 from hdulib import idi
+from hdulib.fitsio import *
+from hdulib.hdfio import *
 import pylab as plt
 import numpy as np
 import pyfits as pf
@@ -56,8 +58,8 @@ if __name__ == '__main__':
                 c = idi.IdiList()
                 d = idi.IdiList()
 
-                c.read_fits('fits/' + fits_file)
-                d.read_hdf('hdf/' + hdf_file)
+                c = read_fits('fits/' + fits_file)
+                d = read_hdf('hdf/' + hdf_file)
 
                 for name, group in c.items():
                     assert name in d
