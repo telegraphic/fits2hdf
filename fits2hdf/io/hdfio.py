@@ -9,14 +9,9 @@ FITS I/O for reading and writing to FITS files.
 import pyfits as pf
 import numpy as np
 
-try:
-    from hdulib import idi
-    from hdulib.idi import *
-    from hdulib.printlog import PrintLog
-except ImportError:
-    import idi
-    from idi import *
-    from printlog import PrintLog
+
+from ..idi import *
+from ..fits2hdf import idi
 
 def read_hdf(infile, mode='r+', verbosity=0):
     """ Read and load contents of an HDF file """

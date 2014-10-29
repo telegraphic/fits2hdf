@@ -19,8 +19,8 @@ except ImportError:
     print "This script requires pyrap to read and write MS files."
     print "Please install casacore and pyrap, and re-run this script."
     exit()
-from hdulib.printlog import PrintLog
-from hdulib.idi import IdiTable, IdiList, VerificationError
+from fits2hdf.printlog import PrintLog
+from fits2hdf.idi import IdiTable, IdiList, VerificationError
 
 def get_size_ms(start_path = '.'):
     """ Return size of MS directory

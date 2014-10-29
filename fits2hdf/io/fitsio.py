@@ -9,12 +9,9 @@ FITS I/O for reading and writing to FITS files.
 import pyfits as pf
 import numpy as np
 
-try:
-    from hdulib import idi
-    from hdulib.idi import *
-except ImportError:
-    import idi
-    from idi import *
+from ..idi import *
+from .. import idi
+
 
 def write_headers(hduobj, idiobj):
     """ copy headers over from idiobj to hduobj

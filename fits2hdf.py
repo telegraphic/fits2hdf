@@ -10,7 +10,7 @@ import os
 import time
 import optparse
 
-from hdulib.idi import IdiList
+from fits2hdf.idi import IdiList
 
 
 if __name__ == '__main__':

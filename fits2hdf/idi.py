@@ -12,8 +12,7 @@ DataFrame object, and there are a few view / verify items also.
 import numpy as np
 import pandas as pd
 
-from hdulib.io import fitsio, hdfio
-from hdulib.printlog import PrintLog
+from fits2hdf.printlog import PrintLog
 
 
 class VerificationError(Exception):
@@ -260,32 +259,5 @@ class IdiList(dict):
                 self.pp.pp("%16s    %s" %(k, v))
         self.pp.vlevel = vtemp
 
-    def read_hdf(self, infile, mode='r+', verbosity=None):
-        """ Read and load contents of an HDF file """
-        if verbosity is None:
-            verbosity = self.pp.vlevel
-        else:
-            self.pp.vlevel = verbosity
-
-        self = hdfio.read_hdf(self, infile, mode='r+', verbosity=verbosity)
-
-
-    def export_hdf(self, outfile, compression=None, shuffle=False, chunks=None):
-        """ Export to HDF file """
-
-        hdfio.export_hdf(self, outfile, compression=None, shuffle=False, chunks=None)
-
-    def read_fits(self, infile, mode='r+', verbosity=None):
-        """ Read and load contents of a FITS file """
-        if verbosity is None:
-            verbosity = self.pp.vlevel
-        else:
-            self.pp.vlevel = verbosity
-
-        self = fitsio.read_fits(infile, mode, verbosity)
-
-    def export_fits(self, outfile):
-        """ Export to FITS file """
-        fitsio.export_fits(self, outfile)
 
 

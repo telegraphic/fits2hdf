@@ -3,8 +3,9 @@ import sys
 
 sys.path.append('..')
 
-from hdulib.io.fitsio import *
-from hdulib.io.hdfio import *
+from fits2hdf.io.fitsio import *
+from fits2hdf.io.hdfio import *
+from fits2hdf import idi
 import numpy as np
 import pyfits as pf
 import h5py
