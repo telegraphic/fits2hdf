@@ -50,7 +50,7 @@ if __name__ == '__main__':
 
         a = IdiList(verbosity=0)
         try:
-            a = ms2hdu(file_in)
+            a = read_ms(file_in)
             export_hdf(a, file_out, compression=comp)
             print "\nCreating %s" % file_out
             print "Input  filesize: %sB" % get_size_ms(file_in)

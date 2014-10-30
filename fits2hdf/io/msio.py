@@ -64,7 +64,7 @@ def table2hdu(table, hd, verbosity=1, close_after=True):
     return hd
 
 
-def ms2hdu(infile, verbosity=1):
+def read_ms(infile, verbosity=1):
     """ Convert MS to a HDF file
     :param infile:  Measurement Set path
     :return: HDU version of Measurement Set
@@ -95,7 +95,7 @@ def ms2hdu(infile, verbosity=1):
     ms.close()
     return hdul
 
-def hdf2ms(hdf_file, ms_file, verbosity=1):
+def export_ms(hdf_file, ms_file, verbosity=1):
     """ Convert an HDF file to MS
     :param hdf_file: Input HDF-MS filename
     :param ms_file: Output MS filename
