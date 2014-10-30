@@ -14,6 +14,7 @@ import h5py
 import optparse
 
 from fits2hdf.io.msio import *
+from fits2hdf.io.hdfio import *
 
 if __name__ == '__main__':
 
@@ -50,7 +51,7 @@ if __name__ == '__main__':
         a = IdiList(verbosity=0)
         try:
             a = ms2hdu(file_in)
-            a.export_hdf(file_out, compression=comp)
+            export_hdf(a, file_out, compression=comp)
             print "\nCreating %s" % file_out
             print "Input  filesize: %sB" % get_size_ms(file_in)
             print "Output filesize: %sB" % os.path.getsize(file_out)

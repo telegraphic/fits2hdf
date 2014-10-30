@@ -13,7 +13,7 @@ import h5py
 if __name__ == '__main__':
 
     download_fits = False
-    run_converter = False
+    run_converter = True
     run_tests     = True
     ext = 'fits'
 

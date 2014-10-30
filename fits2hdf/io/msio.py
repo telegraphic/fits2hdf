@@ -6,6 +6,7 @@ msio.py
 MS I/O for reading and writing to MS files.
 """
 
+import os
 
 try:
     import pyrap.tables as pt

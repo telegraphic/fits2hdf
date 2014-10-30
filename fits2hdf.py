@@ -12,6 +12,8 @@ import time
 import optparse
 
 from fits2hdf.idi import IdiList
+from fits2hdf.io.fitsio import *
+from fits2hdf.io.hdfio import *
 
 
 if __name__ == '__main__':
@@ -48,8 +50,8 @@ if __name__ == '__main__':
 
         a = IdiList(verbosity=0)
         try:
-            a.read_fits(file_in)
-            a.export_hdf(file_out, compression=comp)
+            a = read_fits(file_in)
+            export_hdf(a, file_out, compression=comp)
             print "\nCreating %s" % file_out
             print "Input  filesize: %sB" % os.path.getsize(file_in)
             print "Output filesize: %sB" % os.path.getsize(file_out)
