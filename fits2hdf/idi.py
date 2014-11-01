@@ -10,7 +10,6 @@ DataFrame object, and there are a few view / verify items also.
 """
 
 import numpy as np
-import pandas as pd
 
 from fits2hdf.printlog import PrintLog
 
@@ -31,13 +30,13 @@ class IdiHeader(object):
                    as numpy arrays
 
     """
-    def __init__(self, header=None, comment=None, history=None, verbosity=0):
+    def __init__(self, values=None, comment=None, history=None, verbosity=0):
         self.vals   = {}
         self.history  = []
         self.comment  = []
 
-        if header is not None:
-            self.vals   = header
+        if values is not None:
+            self.vals   = values
         if history is not None:
             self.history  = history
         if history is not None:
@@ -141,6 +140,7 @@ class IdiTable(object):
         if isinstance(data, IdiColumn):
             name = data.name
             self.data[name] = data
+            self.n_rows = data.n_rows
 
         elif isinstance(data, np.ndarray):
             if name == '':
@@ -179,27 +179,48 @@ class IdiTable(object):
                 msg = "Column %s len %i does not match n_rows %i" % (key, self.data[key].shape[0], self.n_rows)
                 raise AssertionError(msg)
 
-    def as_dataframe(self):
-        """ Read data as a pandas DataFrame, instead of dictionary of numpy arrays
-        :return: pandas DataFrame of data
+    def as_ndarray(self):
+        """ Read data as a numpy ndarray, with named columns.
+
+        :return: numpy ndarray table representation
         """
 
         vals   = self.data.values()
         keys   = self.data.keys()
-        dtypes = [str(x.dtype) for x in vals]
-        shapes = [x.shape for x in vals]
-        ndims  = [x.ndim  for x in vals]
+        dtypes = [str(x.data.dtype) for x in vals]
+        shapes = [x.data.shape for x in vals]
+        ndims  = [x.data.ndim  for x in vals]
+        vals   = [x.data for x in vals]
 
-        # Convert 2-dimensional to 1-dimensional struct
-        ii = 0
-        for ii in range(len(vals)):
-            if ndims[ii] == 2:
-                vals[ii] = vals[ii].view(dtype=[(keys[ii], dtypes[ii], shapes[ii][1])]).ravel()
-            if ndims[ii] > 2:
-                raise RuntimeError("NDIM of %s is too large") % keys[ii]
+        stypes = []
 
-        dataframe = pd.DataFrame(dict(zip(keys, vals)))
-        return dataframe
+        for ii in range(len(dtypes)):
+
+            if len(shapes[ii]) == 1:
+                stypes.append(dtypes[ii])
+            else:
+                stypes.append( "%s%s" %(shapes[ii][1], dtypes[ii]))
+
+        dt = {'names'   : keys,
+              'formats' : stypes,
+              #'shapes'  : shapes
+            }
+
+        #print dt
+        if self.n_rows > 0:
+            dd = np.zeros(self.n_rows, dtype=dt)
+
+            for ii in range(len(vals)):
+                #print keys[ii],
+                #print vals[ii].shape,
+                #print dtypes[ii],
+                #print stypes[ii]
+                dd[keys[ii]] = vals[ii]
+        else:
+            dd = None
+
+        return dd
+
 
 
 class IdiColumn(object):
@@ -222,6 +243,8 @@ class IdiColumn(object):
             self.dtype = dtype
         else:
             self.dtype   = data.dtype
+
+        self.n_rows = self.data.shape[0]
 
     def __repr__(self):
         uu = " " if self.units is None else self.units
