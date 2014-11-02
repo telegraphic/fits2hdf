@@ -152,10 +152,16 @@ def export_hdf(self, outfile, compression=None, shuffle=False, chunks=None):
 
                     col_num = 0
                     for col_name in dd.dtype.names:
-                        # TODO: DEFAULT FILL
-                        #dset.attrs["FIELD_%i_FILL" % col_num] =
-                        dset.attrs["FIELD_%i_NAME" % col_num] = np.array([col_name])
+
+                        col_dtype = str(self[gkey].data[col_name].data.dtype)
                         col_units = self[gkey].data[col_name].units
+
+                        if "|S" in col_dtype or "str" in col_dtype:
+                            dset.attrs["FIELD_%i_FILL" % col_num] = np.array([''])
+                        else:
+                            dset.attrs["FIELD_%i_FILL" % col_num] = np.array([0])
+                        dset.attrs["FIELD_%i_NAME" % col_num] = np.array([col_name])
+
                         dset.attrs["FIELD_%i_UNITS" % col_num] = np.array([str(col_units)])
                         col_num += 1
 

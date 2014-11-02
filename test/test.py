@@ -111,6 +111,9 @@ if __name__ == '__main__':
                             print "HDF5 FILE:"
                             print group2.header
                             print group
+
+                            print group2.header.vals[hc][1]
+                            print hv[1]
                             raise
 
                     if attr_match:
