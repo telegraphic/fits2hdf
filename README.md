@@ -1,15 +1,15 @@
 fits2hdf
 ========
 
-fits2hdf is a conversion to utility to port FITS files to Hierarchical Data Format (HDF5) 
+*fits2hdf* is a conversion to utility to port FITS files to Hierarchical Data Format (HDF5) 
 files in the HDFITS format. In addition, there is a utility to port MeasurementSets (MS)
-to HDF5 files. This work was [first presented](http://arxiv.org/a/price_d_2) at the ADASS XXIV 
+to HDF5 files. This work was first presented at the [ADASS XXIV](http://arxiv.org/a/price_d_2)
 conference in Calgary, 2014.
 
-The fits2hdf utility works by first mapping data from FITS/MS/HDF into an in-memory interchange
-format (IDI). fits2hdf is written in python and uses h5py, pyFits, and pyrap for file I/O.
+The *fits2hdf* utility works by first mapping data from FITS/MS/HDF into an in-memory interchange
+format (IDI). *fits2hdf* is written in python and uses h5py, pyFits, and pyrap for file I/O.
 
-fits2hdf is still under development, so should be considered an 'alpha' release that is likely
+*fits2hdf* is still under development, so should be considered an 'alpha' release that is likely
 to change. Community feedback is encouraged, and if you are interested in development please
 get in touch. This work is intended as a "pathfinder" toward getting astronomical data into 
 a standardized HDF5 format, so that the advantages of HDF5 can be leveraged in the future.
