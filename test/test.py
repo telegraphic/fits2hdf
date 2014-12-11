@@ -13,7 +13,7 @@ import h5py
 if __name__ == '__main__':
 
     download_fits = False
-    run_converter = True
+    run_converter = False
     run_tests     = True
     ext = 'fits'
 
@@ -60,7 +60,7 @@ if __name__ == '__main__':
                 d = idi.IdiList()
 
                 c = read_fits('fits/' + fits_file)
-                d = read_hdf('hdf/' + hdf_file)
+                d = read_hdf('hdf/' + hdf_file, verbosity=0)
 
                 for name, group in c.items():
                     assert name in d
@@ -87,10 +87,39 @@ if __name__ == '__main__':
                                         print d1[ii]
                                         print d2[ii]
                                         all_match = False
+
                     if all_match:
                         print "Test 03b: OK - All data match between FITS and HDF5"
                     else:
                         print "Test 03b: ERROR - Not all data match"
+
+                    attr_match = True
+                    for hc, hv in group.header.vals.items():
+                        #print  group2.header.vals
+
+                        try:
+                            assert hc in group2.header.vals.keys()
+                            assert group2.header.vals[hc][0] == hv[0]
+                            assert group2.header.vals[hc][1] == hv[1]
+                        except AssertionError:
+                            attr_match = False
+                            print hc
+                            print "FITS FILE:"
+                            print group.header
+                            print group
+
+                            print "HDF5 FILE:"
+                            print group2.header
+                            print group
+
+                            print group2.header.vals[hc][1]
+                            print hv[1]
+                            raise
+
+                    if attr_match:
+                        print "Test 04: OK - All attributes match between FITS and HDF5"
+                    else:
+                        print "Test 04: ERROR - Not all attributes match"
 
 
 
