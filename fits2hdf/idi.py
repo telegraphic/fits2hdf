@@ -70,7 +70,7 @@ class IdiPrimary(object):
 
 
 class IdiImage(object):
-    """ Header-data unit for storing table data
+    """ Header-data unit for storing image data
 
     stores header dictionary and data dictionary
 
@@ -88,7 +88,6 @@ class IdiImage(object):
 
         if data is not None:
             self.data = data
-
 
         self.pp = PrintLog(verbosity=verbosity)
 

@@ -31,8 +31,10 @@ def guess_chunk(shape):
     elif ndim == 3:
         chunks = (min((shape[0], 128)), min((shape[1], 128)),
                   min((shape[2], 16)))
+    elif ndim == 5:
+        chunks = (1, 10, 109, 4, 2)
     else:
-        raise RuntimeError("Couldn't handle shape %s %s" % (name, shape))
+        raise RuntimeError("Couldn't handle shape %s" % shape)
 
     return chunks
 

@@ -13,6 +13,7 @@ import h5py
 
 from ..idi import *
 from .. import idi
+from . import hdfcompress as bs
 
 def read_hdf(infile, mode='r+', verbosity=0):
     """ Read and load contents of an HDF file """
