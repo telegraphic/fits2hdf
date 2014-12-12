@@ -213,11 +213,11 @@ def export_hdf(self, outfile, compression=None, shuffle=False, chunks=None):
                                   shuffle=shuffle, chunks=chunks)
 
                 # Add image-specific attributes
-                dset.attrs["CLASS"] = np.array(["IMAGE"])
-                dset.attrs["IMAGE_VERSION"] = np.array(["1.2"])
-                if self[gkey].data.ndim == 2:
-                    dset.attrs["IMAGE_SUBCLASS"] = np.array(["IMAGE_GRAYSCALE"])
-                    dset.attrs["IMAGE_MINMAXRANGE"] = np.array([np.min(self[gkey].data), np.max(self[gkey].data)])
+            dset.attrs["CLASS"] = np.array(["IMAGE"])
+            dset.attrs["IMAGE_VERSION"] = np.array(["1.2"])
+            if self[gkey].data.ndim == 2:
+                dset.attrs["IMAGE_SUBCLASS"] = np.array(["IMAGE_GRAYSCALE"])
+                dset.attrs["IMAGE_MINMAXRANGE"] = np.array([np.min(self[gkey].data), np.max(self[gkey].data)])
 
         elif isinstance(self[gkey], IdiPrimary):
             pass
