@@ -15,6 +15,9 @@ from ..idi import *
 from .. import idi
 from .. import unit_conversion
 
+restricted_header_keywords = {"XTENSION", "BITPIX", "PCOUNT", "GCOUNT", "GROUPS", "EXTEND"}
+restricted_table_keywords = {"TDISP", "TUNIT", "TTYPE", "TFORM", "TBCOL",
+                             "TNULL", "TSCAL", "TZERO", "NAXIS"}
 
 def fits_format_code_lookup(numpy_dtype, numpy_shape):
     """ Return a FITS format code from a given numpy dtype
@@ -91,11 +94,10 @@ def write_headers(hduobj, idiobj):
             comment = ''
 
         is_comment = key.endswith("_COMMENT")
-        is_table   = key[:5] in ["TDISP", "TUNIT", "TTYPE", "TFORM", "TBCOL",
-                                 "TNULL", "TSCAL", "TZERO", "NAXIS"]
+        is_table   = key[:5] in restricted_table_keywords
         is_table = is_table or key[:4] == "TDIM" or key == "TFIELDS"
 
-        is_basic = key in ["XTENSION", "BITPIX", "PCOUNT", "GCOUNT"]
+        is_basic = key in restricted_header_keywords
         if is_comment or is_table or is_basic:
             pass
         else:
@@ -121,6 +123,8 @@ def parse_fits_header(hdul):
      history (list): History cards also parsed into a list
      """
 
+
+
     history  = []
     comment = []
     header   = {}
@@ -134,6 +138,10 @@ def parse_fits_header(hdul):
         comment_id = card_id + "_COMMENT"
 
         if card_id in (None, '', ' '):
+            pass
+        elif card_id in restricted_header_keywords:
+            pass
+        elif card_id[:5] in restricted_table_keywords:
             pass
         elif card_id == "HISTORY":
             history.append(card_val)
