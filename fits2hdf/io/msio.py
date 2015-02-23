@@ -17,7 +17,7 @@ except ImportError:
     exit()
 
 from fits2hdf.printlog import PrintLog
-from fits2hdf.idi import IdiTable, IdiList, VerificationError
+from fits2hdf.idi import IdiTableHdu, IdiHdulist, VerificationError
 
 def get_size_ms(start_path='.'):
     """ Return size of MS directory
@@ -42,7 +42,7 @@ def table2hdu(table, hd, verbosity=1, close_after=True):
 
     if isinstance(hd, str):
         pp.h3("Creating %s HDU" % hd)
-        hd = IdiTable(name=hd)
+        hd = IdiTableHdu(name=hd)
 
     colnames = table.colnames()
     keywords = table.getkeywords()
@@ -73,7 +73,7 @@ def read_ms(infile, verbosity=1):
     ms = pt.table(infile)
 
     # Create a HDU List for storing HDUs
-    hdul = IdiList(verbosity=verbosity)
+    hdul = IdiHdulist(verbosity=verbosity)
 
     # Add each column to the main HDU
     hdu_main = table2hdu(ms, "MAIN", verbosity=verbosity, close_after=False)
@@ -103,7 +103,7 @@ def export_ms(hdf_file, ms_file, verbosity=1):
     TODO: Get this working properly.
     """
     pp = PrintLog(verbosity=verbosity)
-    hdul = IdiList(verbosity=1)
+    hdul = IdiHdulist(verbosity=1)
     hdul.read_hdf("testms.h5")
 
     main_hdu = hdul["MAIN"]

@@ -17,73 +17,76 @@ from .. import idi
 def read_hdf(infile, mode='r+', verbosity=0):
     """ Read and load contents of an HDF file """
 
-    self = idi.IdiList(verbosity=verbosity)
+    hdulist = idi.IdiHdulist()
 
     h = h5py.File(infile, mode=mode)
-    self.pp.debug(h.items())
+
+    pp = PrintLog(verbosity=verbosity)
+    pp.debug(h.items())
 
     # See if this is a HDFITS file. Raise warnings if not, but still try to read
     cls = "None"
     try:
         cls = h.attrs["CLASS"]
     except KeyError:
-        self.pp.warn("No CLASS defined in HDF5 file.")
+        pp.warn("No CLASS defined in HDF5 file.")
+
     if "HDFITS" not in cls:
-        self.pp.warn("CLASS %s: Not an HDFITS file." % cls[0])
+        pp.warn("CLASS %s: Not an HDFITS file." % cls[0])
 
     for gname, group in h.items():
-        self.pp.h2("Reading %s" % gname)
+        pp.h2("Reading %s" % gname)
 
         # Form header dict from
-        hk = group["HEADER"].attrs.keys()
-        hv = group["HEADER"].attrs.values()
+        hk = group.attrs.keys()
+        hv = group.attrs.values()
         h_vals = dict(zip(hk, hv))
 
         try:
-            h_comment = group["HEADER"]["COMMENT"]
+            h_comment = group["COMMENT"]
         except KeyError:
             h_comment = None
         try:
-            h_history = group["HEADER"]["HISTORY"]
+            h_history = group["HISTORY"]
         except KeyError:
             h_history = None
         #header = IdiHeader(values=h_vals, comment=h_comment, history=h_history)
         #print header.vals.keys()
 
-        self.pp.pp(group.keys())
+        pp.pp(group.keys())
         if "DATA" not in group:
             hdu_type = "PRIMARY"
-            self.pp.h3("Adding Primary %s" % gname)
-            self.add_primary(gname, header=h_vals, history=h_history, comment=h_comment)
+            pp.h3("Adding Primary %s" % gname)
+            hdulist.add_primary_hdu(gname, header=h_vals, history=h_history, comment=h_comment)
 
         elif group["DATA"].attrs["CLASS"] == "TABLE":
-            self.pp.h3("Adding Table %s" % gname)
+            pp.h3("Adding Table %s" % gname)
             #self.add_table(gname)
-            data = []
+            data = IdiTableHdu(gname)
 
             col_num = 0
             for dname in group["DATA"].dtype.fields:
-                self.pp.debug("Reading col %s > %s" %(gname, dname))
+                pp.debug("Reading col %s > %s" %(gname, dname))
 
                 dset = group["DATA"][dname][:]
                 col_units = group["DATA"].attrs["FIELD_%i_UNITS" % col_num][0]
                 #self[gname].data[dname] = dset[:]
                 #self[gname].n_rows = dset.shape[0]
 
-                idi_col = idi.IdiColumn(dname, dset[:], col_num, units=col_units)
-                data.append(idi_col)
+                idi_col = idi.IdiColumn(dname, dset[:], unit=col_units)
+                data.add_column(idi_col)
                 col_num += 1
 
-            self.add_table(gname,
+            hdulist.add_table_hdu(gname,
                            header=h_vals, data=data, history=h_history, comment=h_comment)
 
         elif group["DATA"].attrs["CLASS"] == "DATA_GROUP":
-            self.pp.h3("Adding Table %s" % gname)
+            pp.h3("Adding Table %s" % gname)
             #self.add_table(gname)
             data = []
 
             for dname, dset in group["DATA"].items():
-                self.pp.debug("Reading col %s > %s" %(gname, dname))
+                pp.debug("Reading col %s > %s" %(gname, dname))
 
                 #self[gname].data[dname] = dset[:]
                 #self[gname].n_rows = dset.shape[0]
@@ -96,50 +99,51 @@ def read_hdf(infile, mode='r+', verbosity=0):
                 idi_col = idi.IdiColumn(dname, dset[:], col_num, units=col_units)
                 data.append(idi_col)
 
-            self.add_table(gname,
+            hdulist.add_table_hdu(gname,
                            header=h_vals, data=data, history=h_history, comment=h_comment)
 
         elif group["DATA"].attrs["CLASS"] == "IMAGE":
-            self.pp.h3("Adding Image %s" % gname)
-            self.add_image(gname,
+            pp.h3("Adding Image %s" % gname)
+            hdulist.add_image_hdu(gname,
                            header=h_vals, data=group["DATA"][:], history=h_history, comment=h_comment)
 
         else:
-            self.pp.warn("Cannot understand data class of %s" % gname)
-        self.pp.debug(gname)
-        self.pp.debug(self[gname].header)
+            pp.warn("Cannot understand data class of %s" % gname)
+        pp.debug(gname)
+        pp.debug(hdulist[gname].header)
         #for hkey, hval in group["HEADER"].attrs.items():
         #    self[gname].header.vals[hkey] = hval
 
     h.close()
 
-    return self
+    return hdulist
 
 
-def export_hdf(self, outfile, compression=None, shuffle=False, chunks=None):
+def export_hdf(idi_hdu, outfile, compression=None, shuffle=False, chunks=None):
     """ Export to HDF file """
 
     h = h5py.File(outfile, mode='w')
+    pp = PrintLog(verbosity=verbosity)
 
     #print outfile
-    self.hdf = h
+    idi_hdu.hdf = h
 
-    self.hdf.attrs["CLASS"] = np.array(["HDFITS"])
+    idi_hdu.hdf.attrs["CLASS"] = np.array(["HDFITS"])
 
-    for gkey in self.keys():
-        self.pp.h2("Creating %s" % gkey)
+    for gkey in idi_hdu.keys():
+        pp.h2("Creating %s" % gkey)
         gg = h.create_group(gkey)
 
         gg.attrs["CLASS"] = np.array(["HDU"])
-        hg = gg.create_group("HEADER")
+        #hg = gg.create_group("HEADER")
 
-        if isinstance(self[gkey], IdiTable):
+        if isinstance(idi_hdu[gkey], IdiTableHdu):
 
             try:
                             #self.pp.verbosity = 5
                 #dg = gg.create_group("DATA")
 
-                dd = self[gkey].as_ndarray()
+                dd = idi_hdu[gkey].as_ndarray()
 
                 if dd is not None:
                     if compression == 'bitshuffle':
@@ -153,8 +157,8 @@ def export_hdf(self, outfile, compression=None, shuffle=False, chunks=None):
                     col_num = 0
                     for col_name in dd.dtype.names:
 
-                        col_dtype = str(self[gkey].data[col_name].data.dtype)
-                        col_units = self[gkey].data[col_name].units
+                        col_dtype = str(idi_hdu[gkey].data[col_name].data.dtype)
+                        col_units = idi_hdu[gkey].data[col_name].units
 
                         if "|S" in col_dtype or "str" in col_dtype:
                             dset.attrs["FIELD_%i_FILL" % col_num] = np.array([''])
@@ -169,12 +173,8 @@ def export_hdf(self, outfile, compression=None, shuffle=False, chunks=None):
                     dset.attrs["VERSION"] = np.array([2.6])     #TODO: Move this version no
                     dset.attrs["TITLE"]   = np.array([gkey])
 
-
-
-
-
             except:
-                self.pp.err("%s" % gkey)
+                idi_hdu.pp.err("%s" % gkey)
                 raise
 
             #for dkey, dval in self[gkey].data.items():
@@ -203,34 +203,34 @@ def export_hdf(self, outfile, compression=None, shuffle=False, chunks=None):
             #        self.pp.err("%s > %s" % (gkey, dkey))
             #        raise
 
-        elif isinstance(self[gkey], IdiImage):
-            self.pp.debug("Adding %s > DATA" % gkey)
+        elif isinstance(idi_hdu[gkey], IdiImageHdu):
+            idi_hdu.pp.debug("Adding %s > DATA" % gkey)
             if compression == 'bitshuffle':
-                dset = bs.create_dataset(gg, "DATA", self[gkey].data)
+                dset = bs.create_dataset(gg, "DATA", idi_hdu[gkey].data)
             else:
-                dset = gg.create_dataset("DATA", data=self[gkey].data, compression=compression,
+                dset = gg.create_dataset("DATA", data=idi_hdu[gkey].data, compression=compression,
                                   shuffle=shuffle, chunks=chunks)
 
                 # Add image-specific attributes
                 dset.attrs["CLASS"] = np.array(["IMAGE"])
                 dset.attrs["IMAGE_VERSION"] = np.array(["1.2"])
-                if self[gkey].data.ndim == 2:
+                if idi_hdu[gkey].data.ndim == 2:
                     dset.attrs["IMAGE_SUBCLASS"] = np.array(["IMAGE_GRAYSCALE"])
-                    dset.attrs["IMAGE_MINMAXRANGE"] = np.array([np.min(self[gkey].data), np.max(self[gkey].data)])
+                    dset.attrs["IMAGE_MINMAXRANGE"] = np.array([np.min(idi_hdu[gkey].data), np.max(idi_hdu[gkey].data)])
 
-        elif isinstance(self[gkey], IdiPrimary):
+        elif isinstance(idi_hdu[gkey], IdiPrimaryHdu):
             pass
 
         # Add header values
         #print self[gkey].header
-        for hkey, hval in self[gkey].header.vals.items():
+        for hkey, hval in idi_hdu[gkey].header.items():
 
-            self.pp.debug("Adding header %s > %s" % (hkey, hval))
-            hg.attrs[hkey] = np.array(hval)
+            idi_hdu.pp.debug("Adding header %s > %s" % (hkey, hval))
+            gg.attrs[hkey] = np.array(hval)
 
-        if self[gkey].header.comment:
-            hg.create_dataset("COMMENT", data=self[gkey].header.comment)
-        if self[gkey].header.history:
-            hg.create_dataset("HISTORY", data=self[gkey].header.history)
+        if idi_hdu[gkey].header.comment:
+            gg.create_dataset("COMMENT", data=idi_hdu[gkey].header.comment)
+        if idi_hdu[gkey].header.history:
+            gg.create_dataset("HISTORY", data=idi_hdu[gkey].header.history)
 
     h.close()

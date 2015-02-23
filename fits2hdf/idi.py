@@ -10,6 +10,12 @@ DataFrame object, and there are a few view / verify items also.
 """
 
 import numpy as np
+import six
+from astropy.table import Table, Column, MaskedColumn
+from astropy.nddata import NDData
+from astropy.utils.metadata import MetaData
+from ordereddict import OrderedDict
+import pprint
 
 from fits2hdf.printlog import PrintLog
 
@@ -19,7 +25,7 @@ class VerificationError(Exception):
     pass
 
 
-class IdiHeader(object):
+class IdiHeader(OrderedDict):
     """ Header unit for storing header information
 
     stores header dictionary and data dictionary
@@ -30,28 +36,64 @@ class IdiHeader(object):
                    as numpy arrays
 
     """
-    def __init__(self, values=None, comment=None, history=None, verbosity=0):
-        self.vals   = {}
-        self.history  = []
-        self.comment  = []
-
-        if values is not None:
-            self.vals   = values
-        if history is not None:
-            self.history  = history
-        if history is not None:
-            self.comment = comment
-
-        self.pp = PrintLog(verbosity=verbosity)
+    def __init__(self, values=None, verbosity=0):
+        super(IdiHeader, self).__init__(values)
 
     def __repr__(self):
-        return "IdiHeader: %s" % self.vals
+        to_print = ''
+        for key, val in self.items():
+            if not key.endswith('_COMMENT'):
+                if len(key) < 8:
+                    key = "%8s" % key
+
+                if type(val) in [bool, float, int]:
+                    val = "%32s" % val
+                elif type(val) in [str, unicode]:
+                    if len(val) < 32:
+                        val = "%32s" % val
+                comment_key = key + '_COMMENT'
+                comment_val = self.get(comment_key)
+
+                if comment_val is None:
+                    comment_val = ''
+                to_print += "%s %s   / %s\n" % (key, val, comment_val)
+        return to_print
+
+class IdiComment(list):
+    """ Class for storing comments within a HDU
+    """
+    def __init__(self, comment=None):
+        new_comment = comment
+        if isinstance(comment, type(None)):
+            new_comment = []
+        elif type(comment) in (str, unicode):
+            new_comment = [comment]
+
+        super(IdiComment, self).__init__(new_comment)
 
 
-class IdiPrimary(object):
-    """ Header-data unit for storing table data
 
-    stores header dictionary and data dictionary
+    def __repr__(self):
+        to_print = 'COMMENTS\n--------\n'
+        for item in self:
+            to_print += item + '\n'
+        return to_print
+
+class IdiHistory(IdiComment):
+    """ Class for storing history within a HDU
+    """
+    def __init__(self, history):
+        super(IdiHistory, self).__init__(history)
+
+    def __repr__(self):
+        to_print = 'HISTORY\n--------\n'
+        for item in self:
+            to_print += item + '\n'
+        return to_print
+
+
+class IdiPrimaryHdu(OrderedDict):
+    """ Header-data unit for storing primary info
 
     name (str):    name of HDU
     header (dict): python dictionary of key:value pairs
@@ -59,16 +101,17 @@ class IdiPrimary(object):
                    as numpy arrays
 
     """
-    def __init__(self, name, header=None, history=None, comment=None, verbosity=0):
+    def __init__(self, name, header=None, history=None, comment=None):
         self.name   = name
-        self.header = IdiHeader(header, comment, history)
-        self.pp = PrintLog(verbosity=verbosity)
+        self.header  = IdiHeader(header)
+        self.comment = IdiComment(comment)
+        self.history = IdiHistory(history)
 
     def __repr__(self):
         return "IdiPrimary: %s" % self.name
 
 
-class IdiImage(object):
+class IdiImageHdu(NDData):
     """ Header-data unit for storing table data
 
     stores header dictionary and data dictionary
@@ -79,208 +122,132 @@ class IdiImage(object):
                    as numpy arrays
 
     """
-    def __init__(self, name, header=None, data=None, comment=None, history=None, verbosity=0):
-        self.name   = name
-        self.header = IdiHeader(header, comment, history)
-        self.data   = np.array([0])
-        self.n_rows = 0
 
-        if data is not None:
-            self.data = data
+    def __init__(self, *args, **kwargs):
+        self.name = args[0]
+        try:
+            self.comment = IdiComment(kwargs.pop("comment"))
+        except KeyError:
+            self.comment = None
+        try:
+            self.history = IdiHistory(kwargs.pop("history"))
+        except KeyError:
+            self.history = None
+        try:
+            self.header = IdiHeader(kwargs.pop("header"))
+        except KeyError:
+            self.header = None
+        super(IdiImageHdu, self).__init__(*args[1:], **kwargs)
 
 
-        self.pp = PrintLog(verbosity=verbosity)
-
-    def __repr__(self):
-        return "IdiImage: %s" % self.name
-
-
-class IdiTable(object):
+class IdiTableHdu(Table):
     """ Header-data unit for storing table data
 
-    stores header dictionary and data dictionary
 
-    name (str):    name of HDU
-    header (dict): python dictionary of key:value pairs
-    data   (dict): dictionary of key:value pairs, where data are stored
-                   as numpy arrays
-
-    """
-    def __init__(self, name, header=None, data=None, comment=None, history=None, verbosity=0):
-        self.name   = name
-        self.header = IdiHeader(header, comment, history)
-        self.data   = {}
-        self.n_rows = 0
-        self.n_cols = 0
-
-        if data is not None:
-            for col in data:
-                self.n_cols += 1
-                self.add_column(col)
-            #self.data = data
-            #self.n_rows = data[0][1].shape[0]
-
-        self.pp = PrintLog(verbosity=verbosity)
-
-    def __repr__(self):
-        return "IdiTable: %s" % self.name
-
-    def add_column(self, data, name='', dtype=None):
-        """ Add a new column to the data unit
-
-        name (str): name of column
-        data (np.array or float): data for column. Defaults to
-            a column of zeros. If a constant is given, then a
-            column of said constant is produced. Alternatively
-            pass a numpy array.
-        dtype (str): Data type to use (ignored if an array is passed)
-        """
-
-        col_id = self.n_cols
-        if isinstance(data, IdiColumn):
-            name = data.name
-            self.data[name] = data
-            self.n_rows = data.n_rows
-
-        elif isinstance(data, np.ndarray):
-            if name == '':
-                raise RuntimeError("No column name supplied.")
-            try:
-                if len(self.data) == 0:
-                    self.n_rows = data.shape[0]
-                assert data.shape[0] == self.n_rows
-            except AssertionError:
-                msg = "Data len %i does not match n_rows %i" % (data.shape[0], self.n_rows)
-                raise RuntimeError(msg)
-
-            self.data[name] = IdiColumn(name, data, col_num=col_id)
-
-        elif type(data) is list:
-            self.data[name] = IdiColumn(name, np.array(data), col_num=col_id)
-
-        elif type(data) is dict:
-            pass
-
-        elif data is None:
-            pass
-
-        else:
-            if self.n_rows == 0:
-                self.n_rows = 1
-            if dtype is None:
-                dtype = type(data)
-            self.data[name] = IdiColumn(name, np.array([data] * self.n_rows, dtype=dtype), col_num=col_id)
-
-    def verify(self):
-        for key in self.data.keys():
-            try:
-                assert self.data[key].shape[0] == self.n_rows
-            except:
-                msg = "Column %s len %i does not match n_rows %i" % (key, self.data[key].shape[0], self.n_rows)
-                raise AssertionError(msg)
-
-    def as_ndarray(self):
-        """ Read data as a numpy ndarray, with named columns.
-
-        :return: numpy ndarray table representation
-        """
-
-        vals   = self.data.values()
-        keys   = self.data.keys()
-        dtypes = [str(x.data.dtype) for x in vals]
-        shapes = [x.data.shape for x in vals]
-        ndims  = [x.data.ndim  for x in vals]
-        vals   = [x.data for x in vals]
-
-        stypes = []
-
-        for ii in range(len(dtypes)):
-
-            if len(shapes[ii]) == 1:
-                stypes.append(dtypes[ii])
-            else:
-                stypes.append( "%s%s" %(shapes[ii][1], dtypes[ii]))
-
-        dt = {'names'   : keys,
-              'formats' : stypes,
-              #'shapes'  : shapes
-            }
-
-        #print dt
-        if self.n_rows > 0:
-            dd = np.zeros(self.n_rows, dtype=dt)
-
-            for ii in range(len(vals)):
-                #print keys[ii],
-                #print vals[ii].shape,
-                #print dtypes[ii],
-                #print stypes[ii]
-                dd[keys[ii]] = vals[ii]
-        else:
-            dd = None
-
-        return dd
-
-
-
-class IdiColumn(object):
-    """ Column unit for storing columnular dataset
-
-    stores header dictionary and data dictionary
-
-    name (str):    name of HDU
-    data:
-    units:
+    Parameters
+    ----------
+    name : string
+        Name of table. Required.
+    data : numpy ndarray, dict, list, or Table, optional
+        Data to initialize table.
+    mask : numpy ndarray, dict, list, optional
+        The mask to initialize the table
+    names : list, optional
+        Specify column names
+    dtypes : list, optional
+        Specify column data types
+    meta : dict, optional
+        Metadata associated with the table
+    copy : boolean, optional
+        Copy the input data (default=True).
 
     """
-    def __init__(self, name, data, col_num, units=None, dtype=None):
-        self.name   = name
-        self.data   = data
-        self.units  = units
-        self.col_num = col_num
+    def __init__(self, *args, **kwargs):
+        self.name = args[0]
+        try:
+            self.comment = IdiComment(kwargs.pop("comment"))
+        except KeyError:
+            self.comment = None
+        try:
+            self.history = IdiHistory(kwargs.pop("history"))
+        except KeyError:
+            self.history = None
+        try:
+            self.header = IdiHeader(kwargs.pop("header"))
+        except KeyError:
+            self.header = IdiHeader()
+        super(IdiTableHdu, self).__init__(*args[1:], **kwargs)
 
-        if dtype:
-            self.dtype = dtype
+
+class IdiColumn(Column):
+    """ IDI version of astropy column"""
+    def __init__(self, *args, **kwargs):
+        self.name = args[0]
+        #print self.name
+        args = args[1:]
+        super(IdiColumn, self).__init__(*args, **kwargs)
+
+    def __new__(cls, name, data=None,
+                dtype=None, shape=(), length=0,
+                description=None, unit=None, format=None, meta=None, copy=False):
+
+        if isinstance(data, MaskedColumn) and np.any(data.mask):
+            raise TypeError("Cannot convert a MaskedColumn with masked value to a Column")
+
+        self = super(IdiColumn, cls).__new__(cls, data=data, name=name, dtype=dtype,
+                                          shape=shape, length=length, description=description,
+                                          unit=unit, format=format, meta=meta)
+        return self
+
+
+class IdiHdulist(OrderedDict):
+    """OrderedDict subclass for a dictionary of Header-data units (HDU).
+
+    This is used as a container equivalent to the FITS HDUList.
+
+    Credit
+    ------
+    Parts of this class are derived / copied from astropy.table
+    http://www.astropy.org
+
+    """
+
+    def __getitem__(self, item):
+        """Get items from a TableColumns object."""
+        if isinstance(item, six.string_types):
+            return OrderedDict.__getitem__(self, item)
+        elif isinstance(item, int):
+            return self.values()[item]
+        elif isinstance(item, tuple):
+            return self.__class__([self[x] for x in item])
+        elif isinstance(item, slice):
+            return self.__class__([self[x] for x in list(self)[item]])
         else:
-            self.dtype   = data.dtype
-
-        self.n_rows = self.data.shape[0]
+            raise IndexError('Illegal key or index value for {} object'
+                             .format(self.__class__.__name__))
 
     def __repr__(self):
-        uu = " " if self.units is None else self.units
-        return "IdiColumn: %02i %16s %08s %s \n" % (self.col_num, self.name, self.dtype, uu)
+        names = ("'{0}'".format(x) for x in six.iterkeys(self))
+        return "<{1} names=({0})>".format(",".join(names), self.__class__.__name__)
 
-class IdiList(dict):
-    """ Header-Data Unit list (actually a dictionary) """
+    # Define keys and values for Python 2 and 3 source compatibility
+    def keys(self):
+        return list(OrderedDict.keys(self))
 
-    def __init__(self, verbosity=0):
-        super(IdiList, self).__init__()
-        self.pp = PrintLog(verbosity=verbosity)
+    def values(self):
+        return list(OrderedDict.values(self))
 
-    def add_table(self, name, header=None, data=None, history=None, comment=None):
+    def add_table_hdu(self, name, header=None, data=None, history=None, comment=None):
         """ Add HDu to HDU list"""
-        self[name] = IdiTable(name, header=header, data=data,
+        self[name] = IdiTableHdu(name, header=header, data=data,
                               history=history, comment=comment)
 
-    def add_image(self, name, header=None, data=None, history=None, comment=None):
-        self[name] = IdiImage(name, header=header, data=data,
+    def add_image_hdu(self, name, header=None, data=None, history=None, comment=None):
+        self[name] = IdiImageHdu(name, header=header, data=data,
                               history=history, comment=comment)
 
-    def add_primary(self, name, header=None, history=None, comment=None):
-        self[name] = IdiPrimary(name, header=header,
+    def add_primary_hdu(self, name, header=None, history=None, comment=None):
+        self[name] = IdiPrimaryHdu(name, header=header,
                                 history=history, comment=comment)
-
-
-    def print_headers(self):
-        """ Print header info to screen """
-        vtemp = self.pp.vlevel
-        self.pp.vlevel = 5
-
-        for key, hdu in self.items():
-            self.pp.h2(key)
-            for k, v in hdu.header.items():
-                self.pp.pp("%16s    %s" %(k, v))
-        self.pp.vlevel = vtemp
-
 
 
