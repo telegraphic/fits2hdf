@@ -9,9 +9,8 @@ Helper functions for writing bitshuffled compressed datatsets
 
 import numpy as np
 import h5py
-
+from h5py import h5f, h5d, h5z, h5t, h5s, filters
 try:
-    from h5py import h5f, h5d, h5z, h5t, h5s, filters
     from bitshuffle import h5
     USE_BITSHUFFLE = True
 except ImportError:
@@ -32,11 +31,11 @@ def guess_chunk(shape):
         chunks = (min((shape[0], 128)), min((shape[1], 128)),
                   min((shape[2], 16)))
     else:
-        raise RuntimeError("Couldn't handle shape %s %s" % (name, shape))
+        raise RuntimeError("Couldn't handle shape %s" % shape)
 
     return chunks
 
-def create_compressed(hgroup, name, data, chunks=None):
+def create_compressed(hgroup, name, data, **kwargs):
     """
     Add a compressed dataset to a given group.
 
@@ -51,19 +50,25 @@ def create_compressed(hgroup, name, data, chunks=None):
     shape = data.shape
     dtype = data.dtype
 
-    if chunks is None:
-        chunks = guess_chunk(shape)
+    # Parse keyword arguments that we need to check
+    compression = None
+    if 'compression' in kwargs:
+        compression = kwargs['compression']
+
+    if 'chunks' not in kwargs:
+        kwargs['chunks'] = guess_chunk(shape)
 
     #print name, shape, dtype, chunks
 
-    try:
+    if compression == 'bitshuffle':
+        chunks = kwargs['chunks']
         h5.create_dataset(hgroup, name, shape, dtype, chunks,
                           filter_pipeline=(32008,),
                           filter_flags=(h5z.FLAG_MANDATORY,),
                           filter_opts=((0, h5.H5_COMPRESS_LZ4),),
                           )
-    except:
-        raise
+    else:
+        h5.create_dataset(hgroup, name, shape, dtype, **kwargs)
 
     hgroup[name][:] = data
 
@@ -77,14 +82,25 @@ def create_dataset(hgroup, name, data, chunks=None):
     :param data: data to write
     """
 
-    num_types = ["float64", "float32", "int32", "int64",
-                 "complex64", "complex128", 
-                 ">i4", ">i8", ">f4", ">f8"]
-    num_types = set(num_types)
-    
-    
+    np_types = [
+            np.uint8,
+            np.uint16,
+            np.uint32,
+            np.uint64,
+            np.int8,
+            np.int16,
+            np.int32,
+            np.int64,
+            np.float16,
+            np.float32,
+            np.float64,
+            np.complex64,
+            np.complex128]
+
+    np_types = set(np_types)
+
     #print name, str(data.dtype)
-    if str(data.dtype) in num_types and USE_BITSHUFFLE:
+    if data.dtype.type in np_types and USE_BITSHUFFLE:
         #if name == 'FLUX':
         #    data = data.astype('int32')
         dset = create_compressed(hgroup, name, data, chunks)
