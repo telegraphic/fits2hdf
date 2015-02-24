@@ -23,6 +23,8 @@ def guess_chunk(shape):
     """ Guess the optimal chunk size for a given shape
     :param shape: shape of dataset
     :return: chunk guess (tuple)
+
+    # TODO: Make this better
     """
     ndim = len(shape)
 
@@ -31,6 +33,9 @@ def guess_chunk(shape):
     elif ndim == 2:
         chunks = (min((shape[0], 128)), min((shape[1], 128)))
     elif ndim == 3:
+        chunks = (min((shape[0], 128)), min((shape[1], 128)),
+                  min((shape[2], 16)))
+    elif ndim == 4:
         chunks = (min((shape[0], 128)), min((shape[1], 128)),
                   min((shape[2], 16)),  min((shape[2], 16)))
     elif ndim == 5:
