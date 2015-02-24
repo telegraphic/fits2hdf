@@ -32,10 +32,16 @@ def guess_chunk(shape):
         chunks = (min((shape[0], 128)), min((shape[1], 128)))
     elif ndim == 3:
         chunks = (min((shape[0], 128)), min((shape[1], 128)),
-                  min((shape[2], 16)))
+                  min((shape[2], 16)),  min((shape[2], 16)))
+    elif ndim == 5:
+        chunks = (min((shape[0], 1)),
+                  min((shape[1], 10)),
+                  min((shape[2], 128)),
+                  min((shape[3], 16)),
+                  min((shape[4], 16))
+                  )
     else:
         raise RuntimeError("Couldn't handle shape %s" % shape)
-
     return chunks
 
 def create_compressed(hgroup, name, data, **kwargs):
