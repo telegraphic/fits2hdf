@@ -15,8 +15,10 @@ from ..idi import *
 from .. import idi
 from .. import unit_conversion
 
+# A list of keywords that are mandatory to FITS, but should always be calculated
+# By the writing program from the data model, and should not be written to HDF5
 restricted_header_keywords = {"XTENSION", "BITPIX", "SIMPLE", "PCOUNT", "GCOUNT",
-                              "GROUPS", "EXTEND", "TFIELDS"}
+                              "GROUPS", "EXTEND", "TFIELDS", "EXTNAME"}
 restricted_table_keywords = {"TDISP", "TUNIT", "TTYPE", "TFORM", "TBCOL",
                              "TNULL", "TSCAL", "TZERO", "NAXIS"}
 

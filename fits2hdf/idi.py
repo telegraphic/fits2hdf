@@ -220,7 +220,14 @@ class IdiHdulist(OrderedDict):
     def __getitem__(self, item):
         """Get items from a TableColumns object."""
         if isinstance(item, six.string_types):
-            return OrderedDict.__getitem__(self, item)
+            try:
+                return OrderedDict.__getitem__(self, item)
+            except KeyError:
+                try:
+                    return OrderedDict.__getitem__(self, item.lower())
+                except KeyError:
+                    return OrderedDict.__getitem__(self, item.upper())
+
         elif isinstance(item, int):
             return self.values()[item]
         elif isinstance(item, tuple):
