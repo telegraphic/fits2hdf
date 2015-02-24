@@ -32,6 +32,8 @@ utilities can already understand them (e.g. PyTables, HDFView), and 2) there are
 standards. Exploration of whether or not these are sufficient and well-suited to astronomy datasets
 is ongoing.
 
+[![astropy](http://img.shields.io/badge/powered%20by-AstroPy-orange.svg?style=flat)](http://www.astropy.org/)
+
 
 
 
