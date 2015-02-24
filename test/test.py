@@ -10,18 +10,23 @@ import numpy as np
 import pyfits as pf
 import h5py
 
+import warnings
+
 if __name__ == '__main__':
 
     download_fits = False
     run_converter = False
     run_tests     = True
-    ext = 'fits'
+    ext = 'fitsidi'
 
     if download_fits:
         os.system('python download_test_fits.py')
     if run_converter:
-        os.system('python ../fits2hdf.py fits hdf -c gzip -x %s' % ext)
+        print "Converting FITS files to HDFITS.."
+        os.system('python ../fits2hdf.py fits hdf -c gzip -x %s -w -v 0' % ext)
         #os.system('python ../fits2hdf.py fits hdf -c gzip -x fz')
+
+    warnings.simplefilter("ignore")
 
     if run_tests:
         for fits_file in os.listdir('fits'):
@@ -56,8 +61,8 @@ if __name__ == '__main__':
                 b.close()
 
                 # IDILIST based tests
-                c = idi.IdiList()
-                d = idi.IdiList()
+                c = idi.IdiHdulist()
+                d = idi.IdiHdulist()
 
                 c = read_fits('fits/' + fits_file)
                 d = read_hdf('hdf/' + hdf_file, verbosity=0)
@@ -71,21 +76,25 @@ if __name__ == '__main__':
                     except AssertionError:
                         print "Test 03a: ERROR - both files do not have group  %s" % name
                     all_match = True
-                    if isinstance(group, idi.IdiTable):
-                        for dc, dd in group.data.items():
-                            assert dc in group2.data
+                    if isinstance(group, idi.IdiTableHdu):
+                        for dc in group.colnames:
+                            assert dc in group2.colnames
                             try:
-                                assert np.allclose(dd.data, group2.data[dc].data)
+                                assert group[dc].unit == group2[dc].unit
+                            except AssertionError:
+                                print "WARNING: units do no match:",
+                                print "Key: %s, fits: %s, hdf: %s" % (dc, group[dc].unit, group2[dc].unit)
+                                all_match = False
+                            try:
+                                assert np.allclose(group[dc], group2[dc])
                             except TypeError:
-                                d1 = dd.data
-                                d2 = group2.data[dc].data
 
-                                for ii in range(len(d1)):
+                                for ii in range(len(group[dc])):
                                     try:
-                                        assert str(d1[ii]).strip() == str(d2[ii]).strip()
+                                        assert str(group[dc][ii]).strip() == str(group2[dc][ii]).strip()
                                     except AssertionError:
-                                        print d1[ii]
-                                        print d2[ii]
+                                        print group[dc][ii]
+                                        print group2[dc][ii]
                                         all_match = False
 
                     if all_match:
@@ -94,27 +103,31 @@ if __name__ == '__main__':
                         print "Test 03b: ERROR - Not all data match"
 
                     attr_match = True
-                    for hc, hv in group.header.vals.items():
+
+                    #print group.header
+                    for hc, hv in group.header.items():
                         #print  group2.header.vals
 
                         try:
-                            assert hc in group2.header.vals.keys()
-                            assert group2.header.vals[hc][0] == hv[0]
-                            assert group2.header.vals[hc][1] == hv[1]
+                            assert hc in group2.header.keys()
+
+                            assert group2.header[hc] == hv
+                            #assert group2.header[hc+"_COMMENT"] == hv[1]
                         except AssertionError:
                             attr_match = False
-                            print hc
-                            print "FITS FILE:"
-                            print group.header
-                            print group
+                            print "WARNING: header values do not match", hc, hv, group2.header[hc]
+                            #print type(hv), type(group2.header[hc])
+                            #print "FITS FILE:"
+                            ##print group.header
+                            #print group
 
-                            print "HDF5 FILE:"
-                            print group2.header
-                            print group
+                            #print "HDF5 FILE:"
+                            #print group2.header
+                            #print group
 
-                            print group2.header.vals[hc][1]
-                            print hv[1]
-                            raise
+                            # print group2.header[hc]
+                            #print hv[1]
+                            #raise
 
                     if attr_match:
                         print "Test 04: OK - All attributes match between FITS and HDF5"

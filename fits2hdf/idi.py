@@ -37,6 +37,7 @@ class IdiHeader(OrderedDict):
 
     """
     def __init__(self, values=None, verbosity=0):
+
         super(IdiHeader, self).__init__(values)
 
     def __repr__(self):
@@ -164,6 +165,7 @@ class IdiTableHdu(Table):
     """
     def __init__(self, *args, **kwargs):
         self.name = args[0]
+
         try:
             self.comment = IdiComment(kwargs.pop("comment"))
         except KeyError:
@@ -177,6 +179,9 @@ class IdiTableHdu(Table):
         except KeyError:
             self.header = IdiHeader()
         super(IdiTableHdu, self).__init__(*args[1:], **kwargs)
+
+        # Add self.data item, which is missing in Table()
+        self.data = self._data
 
 
 class IdiColumn(Column):

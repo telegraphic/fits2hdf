@@ -15,7 +15,8 @@ from ..idi import *
 from .. import idi
 from .. import unit_conversion
 
-restricted_header_keywords = {"XTENSION", "BITPIX", "PCOUNT", "GCOUNT", "GROUPS", "EXTEND"}
+restricted_header_keywords = {"XTENSION", "BITPIX", "SIMPLE", "PCOUNT", "GCOUNT",
+                              "GROUPS", "EXTEND", "TFIELDS"}
 restricted_table_keywords = {"TDISP", "TUNIT", "TTYPE", "TFORM", "TBCOL",
                              "TNULL", "TSCAL", "TZERO", "NAXIS"}
 

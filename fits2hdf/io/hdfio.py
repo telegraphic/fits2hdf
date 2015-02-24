@@ -16,6 +16,7 @@ from .. import idi
 import hdfcompress as bs
 from fitsio import restricted_table_keywords, restricted_header_keywords
 
+restricted_hdf_keywords = {'CLASS', 'SUBCLASS', 'POSITION'}
 
 def write_headers(hduobj, idiobj, verbosity=0):
     """ copy headers over from idiobj to hduobj.
@@ -33,6 +34,7 @@ def write_headers(hduobj, idiobj, verbosity=0):
     pp = PrintLog(verbosity=verbosity)
 
     for key, value in idiobj.header.items():
+        pp.debug(type(value))
         pp.debug("Adding header %s > %s" % (key, value))
         try:
             comment = idiobj.header[key+"_COMMENT"]
@@ -42,13 +44,13 @@ def write_headers(hduobj, idiobj, verbosity=0):
         is_comment = key.endswith("_COMMENT")
         is_table   = key[:5] in restricted_table_keywords
         is_table = is_table or key[:4] == "TDIM" or key == "TFIELDS"
-
         is_basic = key in restricted_header_keywords
-        if is_comment or is_table or is_basic:
+        is_hdf   = key in restricted_hdf_keywords
+        if is_comment or is_table or is_basic or is_hdf:
             pass
         else:
-            hduobj.attrs[key] = np.array([value, comment])
-
+            hduobj.attrs[key] = np.array([value])
+            hduobj.attrs[key+"_COMMENT"] = np.array([comment])
     return hduobj
 
 def read_hdf(infile, mode='r+', verbosity=0):
@@ -71,18 +73,23 @@ def read_hdf(infile, mode='r+', verbosity=0):
     if "HDFITS" not in cls:
         pp.warn("CLASS %s: Not an HDFITS file." % cls[0])
 
-    # Form a list of header attributes that aren't to be parsed
-    restricted = set(["CLASS"])
 
-    for gname, group in h.items():
+    # Read the order of HDUs from file
+    hdu_order = {}
+    for gname in h.keys():
+        pos = h[gname].attrs["POSITION"][0]
+        hdu_order[pos] = gname
+
+    for pos, gname in hdu_order.items():
+        group = h[gname]
         pp.h2("Reading %s" % gname)
 
         # Form header dict from
         h_vals = {}
         for key, values in group.attrs.items():
-            if key not in restricted:
-                h_vals[key] = str(values[0])
-                h_vals[key+"_COMMENT"] = str(values[1])
+            if key not in restricted_hdf_keywords:
+                h_vals[key] = np.asscalar(values[0])
+                #h_vals[key+"_COMMENT"] = values[1]
 
         #hk = group.attrs.keys()
         #hv = group.attrs.values()
@@ -110,16 +117,17 @@ def read_hdf(infile, mode='r+', verbosity=0):
             #self.add_table(gname)
             data = IdiTableHdu(gname)
 
-            col_num = 0
-            for dname in group["DATA"].dtype.fields:
-                pp.debug("Reading col %s > %s" %(gname, dname))
-
-                dset = group["DATA"][dname][:]
+            for col_num in range(len(group["DATA"].dtype.fields)):
+                col_name = group["DATA"].attrs["FIELD_%i_NAME" % col_num][0]
                 col_units = group["DATA"].attrs["FIELD_%i_UNITS" % col_num][0]
+
+                pp.debug("Reading col %s > %s" %(gname, col_name))
+                dset = group["DATA"][col_name][:]
+
                 #self[gname].data[dname] = dset[:]
                 #self[gname].n_rows = dset.shape[0]
 
-                idi_col = idi.IdiColumn(dname, dset[:], unit=col_units)
+                idi_col = idi.IdiColumn(col_name, dset[:], unit=col_units)
                 data.add_column(idi_col)
                 col_num += 1
 
@@ -190,12 +198,15 @@ def export_hdf(idi_hdu, outfile, **kwargs):
 
     idi_hdu.hdf.attrs["CLASS"] = np.array(["HDFITS"])
 
+    hdu_id = 0
     for gkey, gdata in idi_hdu.items():
         pp.h2("Creating %s" % gkey)
+        hdu_id += 1
 
         # Create the new group
         gg = h.create_group(gkey)
         gg.attrs["CLASS"] = np.array(["HDU"])
+        gg.attrs["POSITION"] = np.array([hdu_id])
         #hg = gg.create_group("HEADER")
 
         # Check if the data is a table
@@ -205,9 +216,10 @@ def export_hdf(idi_hdu, outfile, **kwargs):
                 #dg = gg.create_group("DATA")
 
                 dd = idi_hdu[gkey]
+                dd_data = dd._data
 
                 if dd is not None:
-                    dset = bs.create_dataset(gg, "DATA", dd, **kwargs)
+                    dset = bs.create_dataset(gg, "DATA", dd_data, **kwargs)
                     dset.attrs["CLASS"] = np.array(["TABLE"])
 
                     col_num = 0
