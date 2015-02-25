@@ -17,7 +17,7 @@ from astropy.utils.metadata import MetaData
 from ordereddict import OrderedDict
 import pprint
 
-from fits2hdf.printlog import PrintLog
+from printlog import PrintLog
 
 
 class VerificationError(Exception):
@@ -261,5 +261,7 @@ class IdiHdulist(OrderedDict):
     def add_primary_hdu(self, name, header=None, history=None, comment=None):
         self[name] = IdiPrimaryHdu(name, header=header,
                                 history=history, comment=comment)
+
+
 
 

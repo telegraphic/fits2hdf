@@ -218,7 +218,7 @@ def read_fits(infile):
 
     return hdul_idi
 
-def export_fits(hdul, outfile):
+def create_fits(hdul):
     """ Export to FITS file """
 
     # Create a new hdulist
@@ -268,6 +268,12 @@ def export_fits(hdul, outfile):
     now = datetime.now()
     now_str = now.strftime("%Y-%M-%dT%H:%M")
     hdulist[0].header.add_history("File written by fits2hdf %s" %now_str)
+    return hdulist
 
+
+
+def export_fits(hdul, outfile):
+    """ Export FITS to file """
+    fits_hdulist = create_fits(hdul)
     # Write to file
-    hdulist.writeto(outfile, checksum=True, output_verify='fix')
+    fits_hdulist.writeto(outfile, checksum=True, output_verify='fix')

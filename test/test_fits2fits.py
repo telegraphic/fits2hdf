@@ -17,7 +17,7 @@ if __name__ == '__main__':
     download_fits = False
     run_converter = True
     run_tests     = True
-    ext = 'fitsidi'
+    ext = 'fits'
 
     warnings.simplefilter("ignore")
 
