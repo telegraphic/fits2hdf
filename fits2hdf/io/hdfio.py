@@ -108,7 +108,6 @@ def read_hdf(infile, mode='r+', verbosity=0):
 
         pp.pp(group.keys())
         if "DATA" not in group:
-            hdu_type = "PRIMARY"
             pp.h3("Adding Primary %s" % gname)
             hdulist.add_primary_hdu(gname, header=h_vals, history=h_history, comment=h_comment)
 
@@ -135,23 +134,31 @@ def read_hdf(infile, mode='r+', verbosity=0):
                            header=h_vals, data=data, history=h_history, comment=h_comment)
 
         elif group["DATA"].attrs["CLASS"] == "DATA_GROUP":
-            pp.h3("Adding Table %s" % gname)
-            #self.add_table(gname)
-            data = []
+            pp.h3("Adding data group %s" % gname)
+            data = IdiTableHdu(gname)
 
-            for dname, dset in group["DATA"].items():
-                pp.debug("Reading col %s > %s" %(gname, dname))
+            # First, need to figure out column order
+            col_order = {}
+            #print group["DATA"].keys()
+            for col_name in group["DATA"].keys():
+                #print group["DATA"][col_name].attrs.items()
+                pos = group["DATA"][col_name].attrs["COLUMN_ID"][0]
+                col_order[pos] = col_name
 
-                #self[gname].data[dname] = dset[:]
-                #self[gname].n_rows = dset.shape[0]
+            #print col_order
+
+            for pos, col_name in col_order.items():
+                pp.debug("Reading col %s > %s" %(gname, col_name))
+
+                col_dset = group["DATA"][col_name]
+
                 try:
-                    col_units = dset.attrs["UNITS"]
+                    col_units = col_dset.attrs["UNITS"][0]
                 except:
                     col_units = None
-                col_num   = dset.attrs["COLUMN_ID"]
-
-                idi_col = idi.IdiColumn(dname, dset[:], col_num, units=col_units)
-                data.append(idi_col)
+                col_num   = col_dset.attrs["COLUMN_ID"][0]
+                idi_col = idi.IdiColumn(col_name, col_dset[:], unit=col_units)
+                data.add_column(idi_col)
 
             hdulist.add_table_hdu(gname,
                            header=h_vals, data=data, history=h_history, comment=h_comment)
@@ -190,6 +197,8 @@ def export_hdf(idi_hdu, outfile, **kwargs):
     if 'verbosity' in kwargs:
         verbosity = kwargs['verbosity']
 
+    table_version1 = False
+
     h = h5py.File(outfile, mode='w')
     pp = PrintLog(verbosity=verbosity)
 
@@ -210,7 +219,7 @@ def export_hdf(idi_hdu, outfile, **kwargs):
         #hg = gg.create_group("HEADER")
 
         # Check if the data is a table
-        if isinstance(idi_hdu[gkey], IdiTableHdu):
+        if isinstance(idi_hdu[gkey], IdiTableHdu) and table_version1:
             try:
                             #self.pp.verbosity = 5
                 #dg = gg.create_group("DATA")
@@ -246,32 +255,30 @@ def export_hdf(idi_hdu, outfile, **kwargs):
                 pp.err("%s" % gkey)
                 raise
 
+        if isinstance(idi_hdu[gkey], IdiTableHdu) and not table_version1:
+            try:
             # TODO: Reinstate code for DATA_STORE class (column store instead of HDF5 table)
-            #for dkey, dval in self[gkey].data.items():
-            #
-            #    data = dval.data
-            #    if data.ndim != 2:
-            #        chunks = None
-            #    self.pp.debug("Adding col %s > %s" % (gkey, dkey))
-            #
-            #    try:
-            #        if compression == 'bitshuffle':
-            #            dset = bs.create_dataset(dg, dkey, data, chunks=chunks)
-            #
-            #        else:
-            #            dset = dg.create_dataset(dkey, data=data, compression=compression,
-            #                              shuffle=shuffle, chunks=chunks)
-            #
-            #        dset.attrs["CLASS"] = np.array(["COLUMN"])
-            #        dset.attrs["COLUMN_ID"] = np.array([dval.col_num])
-            #
-            #        if dval.units:
-            #            dset.attrs["UNITS"] = np.array([dval.units])
-            #
-            #
-            #    except:
-            #        self.pp.err("%s > %s" % (gkey, dkey))
-            #        raise
+                col_num = 0
+                tbl_group = gg.create_group("DATA")
+                tbl_group.attrs["CLASS"] = np.array(["DATA_GROUP"])
+
+                for dkey, dval in idi_hdu[gkey].columns.items():
+                    data = dval.data
+                    #print "Adding col %s > %s" % (gkey, dkey)
+                    pp.debug("Adding col %s > %s" % (gkey, dkey))
+
+                    dset = bs.create_dataset(tbl_group, dkey, data, **kwargs)
+
+
+                    dset.attrs["CLASS"] = np.array(["COLUMN"])
+                    dset.attrs["COLUMN_ID"] = np.array([col_num])
+                    if dval.unit:
+                        dset.attrs["UNITS"] = np.array([str(dval.unit)])
+                    col_num += 1
+            except:
+                pp.err("%s > %s" % (gkey, dkey))
+                raise
+
 
         elif isinstance(idi_hdu[gkey], IdiImageHdu):
             pp.debug("Adding %s > DATA" % gkey)
