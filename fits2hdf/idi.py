@@ -13,11 +13,7 @@ import numpy as np
 import six
 from astropy.table import Table, Column, MaskedColumn
 from astropy.nddata import NDData
-from astropy.utils.metadata import MetaData
 from ordereddict import OrderedDict
-import pprint
-
-from printlog import PrintLog
 
 
 class VerificationError(Exception):
@@ -26,17 +22,23 @@ class VerificationError(Exception):
 
 
 class IdiHeader(OrderedDict):
-    """ Header unit for storing header information
-
-    stores header dictionary and data dictionary
-
-    name (str):    name of HDU
-    header (dict): python dictionary of key:value pairs
-    data   (dict): dictionary of key:value pairs, where data are stored
-                   as numpy arrays
-
     """
-    def __init__(self, values=None, verbosity=0):
+    Header unit for storing header information
+
+    This object stores a header dictionary. For FITS files, order
+    is important (particularly for HISTORY cards); but HDF5 does
+    not assign any ordering to attributes. As such, order may be lost
+    in translation between the two formats.
+
+    Comments should be passed to this object as dictionary entries with
+    keys key_COMMENT, e.g. CARD1: 1.20, CARD1_COMMENT: 'Example entry'
+
+    Parameters
+    ----------
+    values: dict
+        Dictionary of header keyword : value pairs.
+    """
+    def __init__(self, values=None):
 
         super(IdiHeader, self).__init__(values)
 
@@ -71,8 +73,6 @@ class IdiComment(list):
             new_comment = [comment]
 
         super(IdiComment, self).__init__(new_comment)
-
-
 
     def __repr__(self):
         to_print = 'COMMENTS\n--------\n'
