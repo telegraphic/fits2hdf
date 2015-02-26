@@ -11,6 +11,8 @@ import numpy as np
 import h5py
 from h5py import h5f, h5d, h5z, h5t, h5s, filters
 
+import quinoa
+
 from .. import printlog
 
 try:
@@ -24,14 +26,14 @@ def guess_chunk(shape):
     :param shape: shape of dataset
     :return: chunk guess (tuple)
 
-    # TODO: Make this better
+    #TODO: Make this better
     """
     ndim = len(shape)
 
     if ndim == 1:
         chunks = (min((shape[0], 1024)), )
     elif ndim == 2:
-        chunks = (min((shape[0], 128)), min((shape[1], 128)))
+        chunks = (min((shape[0], 256)), min((shape[1], 256)))
     elif ndim == 3:
         chunks = (min((shape[0], 128)), min((shape[1], 128)),
                   min((shape[2], 16)))
@@ -60,31 +62,29 @@ def create_compressed(hgroup, name, data, **kwargs):
     data:   data to write
     chunks: chunk size
     """
-
-    shape = data.shape
-    dtype = data.dtype
-
-    # Parse keyword arguments that we need to check
-    compression = None
+    
+    # Check explicitly for bitshuffle, as it is not part of h5py
+    compression = ''
     if 'compression' in kwargs:
         compression = kwargs['compression']
 
-    if 'chunks' not in kwargs:
-        kwargs['chunks'] = guess_chunk(shape)
-
     #print name, shape, dtype, chunks
-
-    if compression == 'bitshuffle':
-        chunks = kwargs['chunks']
+    if compression == 'bitshuffle' and USE_BITSHUFFLE:
+        
+        
+        if 'chunks' not in kwargs:
+            kwargs['chunks'] = guess_chunk(data.shape)
+            chunks = kwargs['chunks']
+            
         #print "Creating bitshuffled dataset %s" % hgroup
-        h5.create_dataset(hgroup, name, shape, dtype, chunks,
+        h5.create_dataset(hgroup, name, data.shape, data.dtype, chunks,
                           filter_pipeline=(32008,),
                           filter_flags=(h5z.FLAG_MANDATORY,),
                           filter_opts=((0, h5.H5_COMPRESS_LZ4),),
                           )
     else:
         #print "Creating dataset %s" % hgroup
-        hgroup.create_dataset(name, shape, dtype, **kwargs)
+        hgroup.create_dataset(name, data.shape, data.dtype, **kwargs)
 
     hgroup[name][:] = data
 
