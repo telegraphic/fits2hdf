@@ -11,8 +11,6 @@ import numpy as np
 import h5py
 from h5py import h5f, h5d, h5z, h5t, h5s, filters
 
-import quinoa
-
 from .. import printlog
 
 try:
