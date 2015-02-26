@@ -76,7 +76,7 @@ if __name__ == '__main__':
     filelist = os.listdir(dir_in)
     filelist = [fn for fn in filelist if fn.endswith(opts.ext)]
 
-    t1 = time.time()
+    t_start = time.time()
     file_count = 0
     for filename in filelist:
         file_in = os.path.join(dir_in, filename)
@@ -103,4 +103,4 @@ if __name__ == '__main__':
 
     pp.h1("\nSUMMARY")
     pp.pa("Files created: %i" % file_count)
-    pp.pa("Time taken:    %2.2fs" % (time.time() - t1))
+    pp.pa("Time taken:    %2.2fs" % (time.time() - t_start))

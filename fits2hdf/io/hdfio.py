@@ -16,6 +16,8 @@ from .. import idi
 import hdfcompress as bs
 from fitsio import restricted_table_keywords, restricted_header_keywords
 
+from ..printlog import PrintLog
+
 restricted_hdf_keywords = {'CLASS', 'SUBCLASS', 'POSITION'}
 
 def write_headers(hduobj, idiobj, verbosity=0):

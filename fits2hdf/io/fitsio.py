@@ -199,22 +199,10 @@ def read_fits(infile):
                            header=header, history=history, comment=comment)
         else:
             # Data is tabular
-            data = IdiTableHdu(hdul_fits.name)
-            col_num = 1
-            for key in hdul_fits.data.names:
-                col_units = None
-                try:
-                    col_units_str = hdul_fits.header["TUNIT%i" % col_num]
-                    col_units = unit_conversion.fits_to_units(col_units_str)
-                except KeyError:
-                    col_units = unit_conversion.fits_to_units("")
-                idi_col = idi.IdiColumn(key, data=hdul_fits.data[key][:], unit=col_units)
-                data.add_column(idi_col)
-                col_num += 1
-
+            tbl_data = Table.read(infile, hdu=hdul_fits.name)
+            idi_tbl = IdiTableHdu(hdul_fits.name, tbl_data)
             hdul_idi.add_table_hdu(hdul_fits.name,
-                                   header=header, data=data, history=history, comment=comment)
-
+                                   header=header, data=idi_tbl, history=history, comment=comment)
 
     return hdul_idi
 
