@@ -66,7 +66,7 @@ def load_fits(file_name):
     t3 = time.time()
     hdfio.export_hdf(idi_img, hdf_comp_filename, **hdf_opts)
     t4 = time.time()
-    os.system("../cfitsio/fpack -table %s" % fits_filename)
+    os.system("./fpack -table %s" % fits_filename)
     t5 = time.time()
     os.system("gzip -c %s > %s.gz" % (fits_filename, fits_filename))
     t6 = time.time()
@@ -143,7 +143,7 @@ def create_image(name, data, hdf_opts={}):
     t3 = time.time()
     hdfio.export_hdf(idi_img, hdf_comp_filename, **hdf_opts)
     t4 = time.time()
-    os.system("../cfitsio/fpack -table %s" % fits_filename)
+    os.system("./fpack -table %s" % fits_filename)
     t5 = time.time()
     os.system("gzip -c %s > %s.gz" % (fits_filename, fits_filename))
     t6 = time.time()
@@ -216,6 +216,10 @@ if __name__== "__main__":
         'compression': 'bitshuffle'
         }
 
+    print "HDF5 compression options:"
+    for option, optval in hdf_opts.items():
+        print "    ", option, optval
+
     #file_info = create_image(img_name, img_data, hdf_opts=hdf_opts)
 
     tbl = Table(
@@ -229,19 +233,20 @@ if __name__== "__main__":
 
 
     # Generate data with differing levels of entropy
-    #for max_int in (2**7, 2**15, 2**23, 2**31):
-    #    img_name = "random_integers_%i" % np.log2(max_int)
-    #    img_data = np.random.random_integers(-1*max_int, max_int, size=(2048, 2048)).astype('int32')
-    #    file_info = create_image(img_name, img_data, hdf_opts=hdf_opts)
-#
-    #    tbl.add_row(file_info)
+    for max_int in (2**7, 2**15, 2**23, 2**31):
+        img_name = "random_integers_%i" % np.log2(max_int)
+        img_data = np.random.random_integers(-1*max_int, max_int, size=(8192, 8192)).astype('int32')
+        file_info = create_image(img_name, img_data, hdf_opts=hdf_opts)
 
+        tbl.add_row(file_info)
+
+    tbl.add_columns
 
     # Open example datasets
 
-    for file_name in glob.glob("fits/*.fitsidi"):
-        file_info = load_fits(file_name)
-        tbl.add_row(file_info)
+    #for file_name in glob.glob("fits/*.fitsidi"):
+    #    file_info = load_fits(file_name)
+    #    tbl.add_row(file_info)
 
     tbl.write("generated_data_report.html", format="html")
     tbl.write("generated_data_report.tex", format="latex")
