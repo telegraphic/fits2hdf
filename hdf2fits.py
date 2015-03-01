@@ -1,11 +1,12 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-fits2hdf.py
+hdf2fits.py
 ===========
 
-FITS to HDF5 conversion utility. This script takes a FITS file, processes it into
-an in-memory data structure, then converts this to a HDF5 file.
+FITS to HDF5 conversion utility. This script takes a HDFITS-formatted
+HDF5 files, processes it into an in-memory data structure, then converts
+this to a FITS files.
 """
 
 import os
@@ -13,7 +14,6 @@ import time
 import optparse
 import warnings
 
-from fits2hdf.idi import IdiHdulist
 from fits2hdf.io.fitsio import *
 from fits2hdf.io.hdfio import *
 

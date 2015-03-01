@@ -4,7 +4,8 @@
 ms2hdf.py
 ==========
 
-Python class which reads a Measurement Set and converts it to HDF
+Python class which reads a Measurement Set and converts it to HDF.
+This is experimental, and as such expect it not to work very well.
 
 """
 

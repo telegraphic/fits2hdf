@@ -3,10 +3,11 @@
 idi.py
 ======
 
-Abstract class for python Header-Data unit object. This is similar
+Abstract classes for python Header-Data unit object. This is similar
 to the HDU in FITS. Each HDU has a header dictionary and a data
 dictionary. The data dictionary can be converted into a pandas
 DataFrame object, and there are a few view / verify items also.
+
 """
 
 import numpy as np
@@ -63,7 +64,18 @@ class IdiHeader(OrderedDict):
         return to_print
 
 class IdiComment(list):
-    """ Class for storing comments within a HDU
+    """
+    Class for storing comments within a HDU
+
+    This stores comments as a list of strings. The FITS 'COMMENT'
+    keyword should be stripped, and only the actual comment should
+    be passed.
+
+    Parameters
+    ----------
+    comment: list, string, or None
+        Comment values to be used in initialization (more can be added
+        later by using the append method / other list methods).
     """
     def __init__(self, comment=None):
         new_comment = comment
@@ -81,7 +93,17 @@ class IdiComment(list):
         return to_print
 
 class IdiHistory(IdiComment):
-    """ Class for storing history within a HDU
+    """
+    Class for storing history within a HDU
+
+    This stores history log notes as a list of strings. The FITS 'HISTORY'
+    keyword should be stripped and only actual history log should be passed.
+
+    Parameters
+    ----------
+    history: list, string, or None
+        Comment values to be used in initialization (more can be added
+        later by using the append method / other list methods).
     """
     def __init__(self, history):
         super(IdiHistory, self).__init__(history)
@@ -94,13 +116,23 @@ class IdiHistory(IdiComment):
 
 
 class IdiPrimaryHdu(OrderedDict):
-    """ Header-data unit for storing primary info
+    """
+    Header-data unit for storing PRIMARY metadata
 
-    name (str):    name of HDU
-    header (dict): python dictionary of key:value pairs
-    data   (dict): dictionary of key:value pairs, where data are stored
-                   as numpy arrays
+    This is used for storing the FITS / HDFITS PRIMARY HDU, where
+    there is NO data payload. Otherwise, the IdiImageHdu should be
+    used.
 
+    Parameters
+    ----------
+    name : string
+        Name of HDU. Required.
+    comment : list
+        List of comments. Optional
+    history : list
+        List of history entries. Optional
+    header: dict
+        Header dictionary of keyword:value pairs. Optional
     """
     def __init__(self, name, header=None, history=None, comment=None):
         self.name   = name
@@ -117,11 +149,19 @@ class IdiImageHdu(NDData):
 
     stores header dictionary and data dictionary
 
-    name (str):    name of HDU
-    header (dict): python dictionary of key:value pairs
-    data   (dict): dictionary of key:value pairs, where data are stored
-                   as numpy arrays
-
+    Parameters
+    ----------
+    name : string
+        Name of HDU. Required.
+    comment : list
+        List of comments. Optional
+    history : list
+        List of history entries. Optional
+    header: dict
+        Header dictionary of keyword:value pairs. Optional
+    data: dict
+        dictionary of key:value pairs, where data are stored
+        as numpy arrays
     """
 
     def __init__(self, *args, **kwargs):
@@ -144,11 +184,20 @@ class IdiImageHdu(NDData):
 class IdiTableHdu(Table):
     """ Header-data unit for storing table data
 
+    This subclasses the astropy.table Table() class.
+    It attaches comments, history and a header to make
+    it a "HDU", instead of just a Table
 
     Parameters
     ----------
-    name : string
-        Name of table. Required.
+     name : string
+        Name of HDU. Required.
+    comment : list
+        List of comments. Optional
+    history : list
+        List of history entries. Optional
+    header: dict
+        Header dictionary of keyword:value pairs. Optional
     data : numpy ndarray, dict, list, or Table, optional
         Data to initialize table.
     mask : numpy ndarray, dict, list, optional
@@ -161,7 +210,6 @@ class IdiTableHdu(Table):
         Metadata associated with the table
     copy : boolean, optional
         Copy the input data (default=True).
-
     """
     def __init__(self, *args, **kwargs):
         self.name = args[0]
@@ -185,7 +233,38 @@ class IdiTableHdu(Table):
 
 
 class IdiColumn(Column):
-    """ IDI version of astropy column"""
+    """ IDI version of astropy.table Column()
+
+    This subclasses the astropy.table Column() class, to provide an equivalent
+    comment object for IDI data conversion. This subclass adds the ability to
+    name the column
+
+    Parameters
+    ----------
+    name: string
+        name of column. This is a required argument for IdiColumn, and must be
+        the first argument.
+        Column name and key for reference within Table
+    data : list, ndarray or None
+        Column data values
+    dtype : numpy.dtype compatible value
+        Data type for column
+    shape : tuple or ()
+        Dimensions of a single row element in the column data
+    length : int or 0
+        Number of row elements in column data
+    description : str or None
+        Full description of column
+    unit : str or None
+        Physical unit
+    format : str or None or function or callable
+        Format string for outputting column values. This can be an “old-style”
+        (format % value) or “new-style” (str.format) format specification
+        string or a function or any callable object that accepts a single value
+        and returns a string.
+    meta : dict-like or None
+        Meta-data associated with the column
+    """
     def __init__(self, *args, **kwargs):
         self.name = args[0]
         #print self.name
@@ -200,21 +279,23 @@ class IdiColumn(Column):
             raise TypeError("Cannot convert a MaskedColumn with masked value to a Column")
 
         self = super(IdiColumn, cls).__new__(cls, data=data, name=name, dtype=dtype,
-                                          shape=shape, length=length, description=description,
-                                          unit=unit, format=format, meta=meta)
+                                             shape=shape, length=length, description=description,
+                                             unit=unit, format=format, meta=meta)
         return self
 
 
 class IdiHdulist(OrderedDict):
     """OrderedDict subclass for a dictionary of Header-data units (HDU).
 
-    This is used as a container equivalent to the FITS HDUList.
+    This is used as a container equivalent to the FITS HDUList. This can
+    be initialized with no arguments, then HDUs may be appended to it
+    using regular ordered dict methods
 
-    Credit
-    ------
-    Parts of this class are derived / copied from astropy.table
-    http://www.astropy.org
-
+    Parameters
+    ----------
+    dict_data: dict
+        This class can be initialized with zero arguments, or you can pass
+        a python-style dictionary.
     """
 
     def __getitem__(self, item):
@@ -250,15 +331,60 @@ class IdiHdulist(OrderedDict):
         return list(OrderedDict.values(self))
 
     def add_table_hdu(self, name, header=None, data=None, history=None, comment=None):
-        """ Add HDu to HDU list"""
+        """
+        Add a Table HDU to HDU list
+
+        Parameters
+        ----------
+        name: str
+            Name for table HDU
+        header=None: dict
+            Header keyword:value pairs dictionary. optional
+        data=None: IdiTableHdu
+            IdiTableHdu that contains the data
+        history=None: list
+            list of history data
+        comment=None: list
+            list of comments
+        """
         self[name] = IdiTableHdu(name, header=header, data=data,
                               history=history, comment=comment)
 
     def add_image_hdu(self, name, header=None, data=None, history=None, comment=None):
+        """
+        Add a Image HDU to HDU list
+
+        Parameters
+        ----------
+        name: str
+            Name for table HDU
+        header=None: dict
+            Header keyword:value pairs dictionary. optional
+        data=None: np.ndarray or equivalent
+            Array that contains the image data
+        history=None: list
+            list of history data
+        comment=None: list
+            list of comments
+        """
         self[name] = IdiImageHdu(name, header=header, data=data,
                               history=history, comment=comment)
 
     def add_primary_hdu(self, name, header=None, history=None, comment=None):
+        """
+        Add a Primary HDU to HDU list. This should not have a data payload.
+
+        Parameters
+        ----------
+        name: str
+            Name for table HDU
+        header=None: dict
+            Header keyword:value pairs dictionary. optional
+        history=None: list
+            list of history data
+        comment=None: list
+            list of comments
+        """
         self[name] = IdiPrimaryHdu(name, header=header,
                                 history=history, comment=comment)
 
