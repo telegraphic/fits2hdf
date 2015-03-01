@@ -96,10 +96,25 @@ if __name__== "__main__":
     # Generate data with differing levels of entropy
     print "Generating random integers"
     max_int = 2**23
-    img_name = "random_integers_%i" % np.log2(max_int)
+
     #img_data = np.random.random_integers(-1*max_int, max_int, size=(1000, 1000, 1000)).astype('int32')
     #create_image(img_name, img_data, hdf_opts=hdf_opts)
 
     # Open example datasets
     print "Reading..."
-    read_speed(img_name)
+
+
+    for copy_num in range(1, 5):
+        fname = "random_integers_%i.fits" % np.log2(max_int)
+        fname2 = "random_integers_%i%i.fits" % (np.log2(max_int), copy_num)
+        print "cp fits_generated/%s fits_generated/%s" % (fname, fname2)
+        os.system("cp fits_generated/%s fits_generated/%s" % (fname, fname2))
+
+        fname = "random_integers_%i.fits" % np.log2(max_int)
+        fname2 = "random_integers_%i%i.fits" % (np.log2(max_int), copy_num)
+        print "cp hdf_generated/%s hdf_generated/%s" % (fname, fname2)
+        os.system("cp fits_generated/%s fits_generated/%s" % (fname, fname2))
+
+    for copy_num in range(1, 5):
+        img_name = "random_integers_%i%i" % (np.log2(max_int), copy_num)
+        read_speed(img_name)
