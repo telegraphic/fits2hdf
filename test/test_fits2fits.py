@@ -17,6 +17,7 @@ if __name__ == '__main__':
     download_fits = False
     run_converter = True
     run_tests     = True
+    overwrite_out = True
     ext = 'fits'
 
     warnings.simplefilter("ignore")
@@ -25,10 +26,11 @@ if __name__ == '__main__':
         os.system('python download_test_fits.py')
     if run_converter:
         print "Converting FITS files to FITS.."
-        os.system('python ../fits2fits.py fits fits_out -w -x %s' % ext)
+        if overwrite_out:
+            os.system('python ../fits2fits.py fits fits_out -w -x %s -o' % ext)
+        else:
+            os.system('python ../fits2fits.py fits fits_out -w -x %s' % ext)
         #os.system('python ../fits2hdf.py fits hdf -c gzip -x fz')
-
-
 
     if run_tests:
         for fits_file in os.listdir('fits'):
@@ -63,11 +65,22 @@ if __name__ == '__main__':
                         assert isinstance(d[name], type(group))
                         print "Test 03a: OK - Both files as IDI have group  %s" % name
                     except AssertionError:
-                        print "Test 03a: ERROR - both files do not have group  %s" % name
+                        if name == "PRIMARY":
+                            group2 = d["PRIDATA"]
+                            assert isinstance(d["PRIDATA"], type(group))
+                            print "Test 03a: OK with GROUPSHDU exception - Both files as IDI have group  %s" % name
+                        else:
+                            print "Test 03a: ERROR - both files do not have group  %s" % name
                     all_match = True
                     if isinstance(group, idi.IdiTableHdu):
                         for dc in group.colnames:
                             assert dc in group2.colnames
+                            try:
+                                assert group[dc].shape == group2[dc].shape
+                            except:
+                                print "ERROR: shapes do no match:",
+                                print "GROUP1: %s, GROUP2: %s" % (group[dc].shape, group2[dc].shape)
+                                raise
                             try:
                                 assert group[dc].unit == group2[dc].unit
                             except AssertionError:
@@ -76,6 +89,10 @@ if __name__ == '__main__':
                                 all_match = False
                             try:
                                 assert np.allclose(group[dc], group2[dc])
+                            except AssertionError:
+                                print "ERROR!: DATA DO NOT MATCH!"
+                                print group[dc][0]
+                                print group2[dc][0]
                             except TypeError:
 
                                 for ii in range(len(group[dc])):

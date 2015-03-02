@@ -43,6 +43,8 @@ if __name__ == '__main__':
                       help='verbosity level (default 0, up to 5)')
     parser.add_option('-w', '--nowarn', dest='warn', action='store_false', default=True,
                       help='Turn off warnings created by FITS parsing')
+    parser.add_option('-o', '--overwrite', dest='overwrite', action='store_true', default=False,
+                      help='Automatically overwrite output files if already exist')
     (opts, args) = parser.parse_args()
     if len(args) == 2:
         dir_in  = args[0]
@@ -79,12 +81,15 @@ if __name__ == '__main__':
         try:
             a = read_fits(file_in)
             if os.path.exists(file_out):
-                qn = raw_input("%s exists. Overwrite (y/n)?" % file_out)
-                if qn in ["y", "Y", "yes"]:
+                if opts.overwrite:
                     os.remove(file_out)
+                else:
+                    qn = raw_input("%s exists. Overwrite (y/n)?" % file_out)
+                    if qn in ["y", "Y", "yes"]:
+                        os.remove(file_out)
 
-            export_fits(a, file_out)
             print "\nCreating %s" % file_out
+            export_fits(a, file_out)
             print "Input  filesize: %sB" % os.path.getsize(file_in)
             print "Output filesize: %sB" % os.path.getsize(file_out)
             compfact = float(os.path.getsize(file_in)) / float(os.path.getsize(file_out))

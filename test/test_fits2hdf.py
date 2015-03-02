@@ -14,7 +14,7 @@ import warnings
 
 if __name__ == '__main__':
 
-    download_fits = False
+    download_fits = True
     run_converter = True
     run_tests     = True
     ext = 'fits'
@@ -23,7 +23,7 @@ if __name__ == '__main__':
         os.system('python download_test_fits.py')
     if run_converter:
         print "Converting FITS files to HDFITS.."
-        os.system('python ../fits2hdf.py fits hdf -c gzip -x %s -w -v 0' % ext)
+        os.system('python ../fits2hdf.py fits hdf -c gzip -x %s -v 0' % ext)
         #os.system('python ../fits2hdf.py fits hdf -c gzip -x fz')
 
     warnings.simplefilter("ignore")

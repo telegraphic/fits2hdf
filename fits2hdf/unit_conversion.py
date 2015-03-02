@@ -85,5 +85,6 @@ def units_to_fits(unit):
     A roundtrip from fits_to_units -> units_to_fits may not return
     the original string, as people often don't follow the standard.
     """
-
+    if unit is None:
+        unit = Unit('')
     return unit.to_string("fits").upper()

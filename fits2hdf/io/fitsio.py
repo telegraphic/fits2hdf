@@ -7,10 +7,11 @@ FITS I/O for reading and writing to FITS files.
 """
 
 from astropy.io import fits as pf
-#import pyfits as pf
+from astropy.io.fits.verify import VerifyWarning
 from astropy.units import Unit, UnrecognizedUnit
 import numpy as np
 from datetime import datetime
+import warnings
 
 from ..idi import *
 from .. import idi
@@ -24,6 +25,11 @@ restricted_header_keywords = {"XTENSION", "BITPIX", "SIMPLE", "PCOUNT", "GCOUNT"
 restricted_table_keywords = {"TDISP", "TUNIT", "TTYPE", "TFORM", "TBCOL",
                              "TNULL", "TSCAL", "TZERO", "NAXIS"}
 
+class DeprecatedGroupsHDUWarning(VerifyWarning):
+    """
+    Warning message when a deprecated 'group HDU' is found
+    """
+
 def fits_format_code_lookup(numpy_dtype, numpy_shape):
     """ Return a FITS format code from a given numpy dtype
 
@@ -33,6 +39,13 @@ def fits_format_code_lookup(numpy_dtype, numpy_shape):
         Numpy dtype to lookup
     numpy_shape: tuple
         shape of data array to be converted into a FITS format
+
+    Returns
+    -------
+    fmt_code: string
+        FITS format code, e.g. 8A for character string of length 8
+    fits_dim: string or None
+        Returns fits dimension for TDIM keyword
 
     Notes
     -----
@@ -60,14 +73,19 @@ def fits_format_code_lookup(numpy_dtype, numpy_shape):
     # Get length of array last axis
     fmt_len = 1
     if len(numpy_shape) > 1:
-        fmt_len = numpy_shape[-1]
+        for ii in numpy_shape[1:]:
+            fmt_len *=  ii
+        #fmt_len = numpy_shape[-1]
+    else:
+        fmt_len = 1
 
-    if np_type is np.string_:
+    if np_type is np.string_ or "string" in str(np_type):
+        fits_dim = None
         if numpy_dtype.itemsize == 1:
-            return "A"
+            fits_fmt = "A"
         else:
             fits_fmt = '%iA' % numpy_dtype.itemsize
-            return fits_fmt
+        return fits_fmt, fits_dim
 
     else:
         #TODO: handle special case of uint16,32,64, requires BZERO / scale
@@ -89,10 +107,23 @@ def fits_format_code_lookup(numpy_dtype, numpy_shape):
         }
 
         fmt_code = dtype_dict.get(np_type)
-        if fmt_len == 1:
-            return fmt_code
+
+        if fmt_len > 1:
+            fmt_code = "%i%s" % (fmt_len, fmt_code)
+
+        if len(numpy_shape) == 1:
+            fits_dim = None
         else:
-            return "%i%s" % (fmt_len, fmt_code)
+            #NOTE: Needs to be flipped to be FORTRAN order
+            # From FITS spec: The value field of this indexed keyword shall contain a
+            # character string describing how to interpret the contents of field n as
+            # a multi-dimensional array with a format of “(l, m, n ...)” where l, m, n, ...
+            # are the dimensions of the array. The data are ordered such that the array index
+            # of the first dimension given (l) is the most rapidly varying and that of the last
+            # dimension given is the least rapidly varying.
+            fits_dim = str(numpy_shape[1:][::-1])
+
+        return fmt_code, fits_dim
 
 def write_headers(hduobj, idiobj):
     """ copy headers over from idiobj to hduobj.
@@ -110,6 +141,10 @@ def write_headers(hduobj, idiobj):
         Level of verbosity, none (0) to all (5)
     """
 
+    header_obj = hduobj
+    if not isinstance(hduobj, pf.Header):
+        header_obj = hduobj.header
+
     for key, value in idiobj.header.items():
 
         try:
@@ -125,15 +160,16 @@ def write_headers(hduobj, idiobj):
         if is_comment or is_table or is_basic:
             pass
         else:
-            hduobj.header[key] = (value, comment)
+            header_obj[key] = (value, comment)
 
     for histline in idiobj.history:
-        hduobj.header.add_history(histline)
+        header_obj.add_history(histline)
 
     for commline in idiobj.comment:
-        hduobj.header.add_comment(commline)
+        header_obj.add_comment(commline)
 
-    hduobj.verify('fix')
+    if not isinstance(hduobj, pf.Header):
+        hduobj.verify('fix')
     return hduobj
 
 def parse_fits_header(hdul):
@@ -201,6 +237,10 @@ def read_fits(infile, verbosity=0):
 
     hdul_idi = idi.IdiHdulist()
 
+    print ff.info()
+    import time
+    time.sleep(2)
+
     hdul_idi.fits = ff
 
     ii = 0
@@ -214,11 +254,16 @@ def read_fits(infile, verbosity=0):
         ImageHDU   = pf.hdu.ImageHDU
         PrimaryHDU = pf.hdu.PrimaryHDU
         compHDU    = pf.hdu.CompImageHDU
+        groupsHDU  = pf.hdu.groups.GroupsHDU
 
         if isinstance(hdul_fits, ImageHDU) or isinstance(hdul_fits, PrimaryHDU):
             pp.debug("Adding Image HDU %s" % hdul_fits)
             try:
-                if hdul_fits.size == 0:
+                if isinstance(hdul_fits, groupsHDU):
+                    # We have a random group table, yuck
+                    hdul_idi.add_table_hdu(hdul_fits.name, data=hdul_fits.data[:],
+                                           header=header, history=history, comment=comment)
+                elif hdul_fits.size == 0:
                     hdul_idi.add_primary_hdu(hdul_fits.name,
                                               header=header, history=history, comment=comment)
                 elif hdul_fits.is_image:
@@ -265,7 +310,7 @@ def create_fits(hdul, verbosity=0):
     # Create a new hdulist
     hdulist = pf.HDUList()
 
-    # Create a new hdu for every item in IdiList
+
     for name, idiobj in hdul.items():
         pp.debug("%s %s" % (name, idiobj))
 
@@ -280,8 +325,13 @@ def create_fits(hdul, verbosity=0):
             if name == "PRIMARY":
                 new_hdu = pf.PrimaryHDU()
                 new_hdu = write_headers(new_hdu, idiobj)
-                new_hdu.data = idiobj.data
-                hdulist.insert(0, new_hdu)
+                try:
+                    new_hdu.data = idiobj.data
+                    hdulist.insert(0, new_hdu)
+                except KeyError:
+                    print idiobj
+                    #print new_hdu
+                    raise
             else:
                 new_hdu = pf.ImageHDU()
                 new_hdu = write_headers(new_hdu, idiobj)
@@ -290,28 +340,42 @@ def create_fits(hdul, verbosity=0):
                 hdulist.append(new_hdu)
 
         elif isinstance(idiobj, IdiTableHdu):
+            if idiobj.name == "PRIMARY":
+                pp.warn("Groups HDU has been converted to a binary table")
+                warnings.warn("PRIMARY GroupsHDU has been converted to a binary table", DeprecatedGroupsHDUWarning)
+                idiobj.name = "PRIDATA"
+                name = idiobj.name
+                #hdulist.append(pf.PrimaryHDU())
+
             pp.pp("Creating Table HDU %s" % idiobj)
             fits_cols = []
             for cn in idiobj.colnames:
                 col = idiobj[cn]
-                fits_fmt = fits_format_code_lookup(col.dtype, col.shape)
+                fits_fmt, fits_dim = fits_format_code_lookup(col.dtype, col.shape)
                 fits_unit = unit_conversion.units_to_fits(col.unit)
-                fits_col = pf.Column(name=col.name, format=fits_fmt, unit=fits_unit, array=col.data)
+
+                pp.debug("%s %s %s" % (fits_fmt, fits_unit, col.name))
+                fits_col = pf.Column(name=col.name, format=fits_fmt, unit=fits_unit,
+                                     array=col.data, dim=fits_dim)
+                pp.debug(col.data.shape)
+
                 fits_cols.append(fits_col)
+
             table_def = pf.ColDefs(fits_cols)
-            #print table_def
-            new_hdu = pf.BinTableHDU.from_columns(table_def)
+            pp.pp(table_def)
+            print table_def
+
+            new_hdu = pf.BinTableHDU.from_columns(table_def, name=idiobj.name)
             new_hdu = write_headers(new_hdu, idiobj)
             new_hdu.name = name
             new_hdu.verify()
+            #print new_hdu.name, idiobj.name
             hdulist.append(new_hdu)
             hdulist.verify()
 
-
-    # Add creation info to history
     now = datetime.now()
     now_str = now.strftime("%Y-%M-%dT%H:%M")
-    hdulist[0].header.add_history("File written by fits2hdf %s" %now_str)
+    hdulist[0].header.add_history("%s File written by fits2hdf" %now_str)
     return hdulist
 
 
