@@ -316,10 +316,6 @@ def read_fits(infile, verbosity=0):
 
     hdul_idi = idi.IdiHdulist()
 
-    print ff.info()
-    import time
-    time.sleep(2)
-
     hdul_idi.fits = ff
 
     ii = 0
