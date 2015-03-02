@@ -25,6 +25,7 @@ restricted_header_keywords = {"XTENSION", "BITPIX", "SIMPLE", "PCOUNT", "GCOUNT"
 restricted_table_keywords = {"TDISP", "TUNIT", "TTYPE", "TFORM", "TBCOL",
                              "TNULL", "TSCAL", "TZERO", "NAXIS"}
 
+
 class DeprecatedGroupsHDUWarning(VerifyWarning):
     """
     Warning message when a deprecated 'group HDU' is found
@@ -125,6 +126,49 @@ def fits_format_code_lookup(numpy_dtype, numpy_shape):
 
         return fmt_code, fits_dim
 
+def numpy_dtype_lookup(numpy_dtype):
+    """
+    Return the local OS datatype for a given dtype
+
+    Notes
+    -----
+    This is added to workaround a bug in binary table writing,
+    whereby an additional byteswap is done that is unnecessary.
+
+    Parameters
+    ----------
+    numpy_dtype: numpy.dtype
+        Numpy datatype
+
+    Returns
+    -------
+    numpy_local_dtype: numpy.dtype
+        Local numpy datatype
+    """
+
+    np_type = numpy_dtype.type
+
+    dtype_dict = {
+            np.uint8:   'uint8',
+            np.uint16:  'uint16',    # No native FITS equivalent
+            np.uint32:  'uint32',
+            np.uint64:  'uint64',
+            np.int8:    'int8',    # No native FITS equivalent
+            np.int16:   'int16',
+            np.int32:   'int32',
+            np.int64:   'int64',
+            np.float16: 'float16',    # No native FITS equivalent
+            np.float32: 'float32',
+            np.float64: 'float64',
+            np.complex64: 'complex64',
+            np.complex128: 'complex128',
+            np.bool_:      'bool',
+            np.string_:    'string'
+        }
+
+    new_dtype = np.dtype(dtype_dict.get(np_type))
+    return new_dtype
+
 def write_headers(hduobj, idiobj):
     """ copy headers over from idiobj to hduobj.
 
@@ -217,6 +261,41 @@ def parse_fits_header(hdul):
             header[comment_id] = card_comment
 
     return header, comment, history
+
+
+def create_column(col):
+    """
+    Create a astropy.io.fits column object from IdiColumn
+
+    This is a helper function that automatically computes a few things
+    that should be obvious from the numpy data type and shape, but that
+    the fits.column object needs to have set explicitly.
+
+    This fills in format, dim, and array keywords.
+    Unit and null are left as keyword arguments.
+    Bscale, bzero, disp, start, and ascii are NOT supported.
+
+    Parameters
+    ----------
+    col: IdiColumn
+        IdiColumn object that contains the data array
+
+    Returns
+    -------
+    fits_col: pf.Column
+        astropy.io.fits column
+    """
+    name = col.name
+    fits_fmt, fits_dim = fits_format_code_lookup(col.dtype, col.shape)
+    fits_unit = unit_conversion.units_to_fits(col.unit)
+    local_type = numpy_dtype_lookup(col.data.dtype)
+    data = col.data.astype(local_type)
+
+    fits_col = pf.Column(name=name, format=fits_fmt, unit=fits_unit,
+                         array=data, dim=fits_dim)
+
+    return fits_col
+
 
 
 def read_fits(infile, verbosity=0):
@@ -351,12 +430,7 @@ def create_fits(hdul, verbosity=0):
             fits_cols = []
             for cn in idiobj.colnames:
                 col = idiobj[cn]
-                fits_fmt, fits_dim = fits_format_code_lookup(col.dtype, col.shape)
-                fits_unit = unit_conversion.units_to_fits(col.unit)
-
-                pp.debug("%s %s %s" % (fits_fmt, fits_unit, col.name))
-                fits_col = pf.Column(name=col.name, format=fits_fmt, unit=fits_unit,
-                                     array=col.data, dim=fits_dim)
+                fits_col = create_column(col)
                 pp.debug(col.data.shape)
 
                 fits_cols.append(fits_col)
