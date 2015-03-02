@@ -21,6 +21,8 @@ from ..printlog import PrintLog
 # List of keywords not to copy over to FITS files
 restricted_hdf_keywords = {'CLASS', 'SUBCLASS', 'POSITION'}
 
+
+
 def write_headers(hduobj, idiobj, verbosity=0):
     """ copy headers over from idiobj to hduobj.
 

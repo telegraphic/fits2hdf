@@ -289,7 +289,7 @@ def create_fits(hdul, verbosity=0):
                 new_hdu.name = name
                 hdulist.append(new_hdu)
 
-        elif isinstance(idiobj, IdiTableHdu)
+        elif isinstance(idiobj, IdiTableHdu):
             pp.pp("Creating Table HDU %s" % idiobj)
             fits_cols = []
             for cn in idiobj.colnames:
