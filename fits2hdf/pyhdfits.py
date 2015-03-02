@@ -15,30 +15,13 @@ instead of
 So that both HDF5 and FITS files can be read transparently.
 """
 
-import os
 from astropy.io import fits as pfo
+from astropy.io.fits import *
 
 from io.hdfio import *
 from io.fitsio import *
-from astropy.io.fits import *
-from astropy.io.fits import PrimaryHDU, ImageHDU, CompImageHDU
 
-def check_file_type(file_name):
-    """ Check what kind of file a file is based on its filename """
-
-    file_root, file_ext = os.path.splitext(file_name)
-
-    fits_exts = {'.fits', '.sdfits', '.fitsidi', '.sdf', '.psrfits'}
-    hdf_exts  = {'.h5', '.hdf', '.hdf5', '.hdfits'}
-
-    file_ext = file_ext.lower()
-    if file_ext in fits_exts:
-        return 'fits'
-    elif file_ext in hdf_exts:
-        return 'hdf'
-    else:
-        return 'unknown'
-
+from check_file_type import check_file_type
 
 def open(*args, **kwargs):
     """ Open a file, and return a FITS HDUList object.
@@ -46,6 +29,12 @@ def open(*args, **kwargs):
     This overrides the default pyfits open, and first checks to see if the file
     is a HDF5 file. If so, then the file is opened using fits2hdf.io.hdfio
     and then exported to a FITS file (in memory, not on disk).
+
+    Notes
+    -----
+    If you're not careful, this will override the standard open() class. So,
+    never do "from pyhdfits import open", as this would be bad.
+    #TODO: Do this slightly different, to avoid the open() issue
     """
     file_name = args[0]
     file_type = check_file_type(file_name)
