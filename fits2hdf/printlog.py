@@ -4,7 +4,7 @@
 printlog.py
 ===========
 
-Print log
+Printing and logging utilities.
 
 """
 
@@ -14,6 +14,8 @@ from colorama import Fore
 class LinePrint():
     """
     Print things to stdout on one line dynamically
+
+    Instead of creating multiple lines, update current line with new data.
     """
 
     def __init__(self, data):
@@ -26,7 +28,7 @@ class PrintLog(object):
     Print / log based on verbosity level
 
     Verbosity level: 0 - 4
-    0: Print nothing
+    0: Print errors and pa only
     1: Print H1
     2: Print H1 + H2
     3: Print H1 + H2 + H3
