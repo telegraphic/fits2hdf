@@ -45,8 +45,11 @@ def guess_chunk(shape):
                   min((shape[3], 16)),
                   min((shape[4], 16))
                   )
+    elif ndim >= 6:
+        chunks = map(int, ((np.ceil(np.array(shape) / 32) + 1)))
+        chunks = tuple(chunks)
     else:
-        raise RuntimeError("Couldn't handle shape %s" % shape)
+        raise RuntimeError("Couldn't handle shape %s" % str(shape))
     return chunks
 
 def create_compressed(hgroup, name, data, **kwargs):
@@ -65,10 +68,9 @@ def create_compressed(hgroup, name, data, **kwargs):
     compression = ''
     if 'compression' in kwargs:
         compression = kwargs['compression']
-
+    
     #print name, shape, dtype, chunks
     if compression == 'bitshuffle' and USE_BITSHUFFLE:
-        
         
         if 'chunks' not in kwargs:
             kwargs['chunks'] = guess_chunk(data.shape)
