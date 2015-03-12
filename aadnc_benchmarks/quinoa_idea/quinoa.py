@@ -28,6 +28,7 @@ COUSCOUS: COnversion to Unsigned / Signed ...
 
 import numpy as np
 from scipy.signal import convolve2d
+from pylab import plt
 
 def estimate_noise(data):
     """ Estimate the RMS noise of an image
@@ -58,14 +59,14 @@ def apply_dither(data, seed):
     """ Apply subtractive dither """
     np.random.seed(seed)
     dither_vals = np.random.random(data.shape)
-    data = data - dither_vals
+    data = data + dither_vals
     return data
 
 def unapply_dither(data, seed):
     """ Remove subtractive dither from image """
     np.random.seed(seed)
     dither_vals = np.random.random(data.shape)
-    data = data + dither_vals
+    data = data - dither_vals
     return data
 
 
@@ -79,23 +80,20 @@ def quinoa_scale(data, q=4.0, subtractive_dither=True, seed=12345):
     """
 
     if subtractive_dither:
-        np.random.seed(12345)
-        dither_vals = np.random.random(data.shape)
-        data = data - dither_vals
+        data = apply_dither(data, seed)
 
     zero_point = np.nanmin(data)
-    max_point = np.nanmax(data)
-
+    max_point  = np.nanmax(data)
+    dyn_range = max_point - zero_point
+    
     data_zeroed = data - zero_point
-
+    
     # Compute scale factor
     noise_rms = estimate_noise(data)
-    scale_factor = noise_rms / q
+    
+    scale_factor = (q / noise_rms) * (2**32 / dyn_range)
 
-    data_int = np.ceil((data_zeroed) / scale_factor).astype('uint32')
-
-    if np.nanmax(data_int) <= 2**16:
-        data_int = data_int.astype('uint16')
+    data_int = np.ceil((data_zeroed) * scale_factor).astype('uint32')
 
     scale_dict = {
         'zero': zero_point,
@@ -115,7 +113,7 @@ def quinoa_unscale(scale_dict):
     ss = scale_dict
     data = ss["data"].astype('float32')
 
-    data = (data * ss["scale_factor"]) + ss["zero"]
+    data = (data / ss["scale_factor"]) + ss["zero"]
 
     if ss["dithered"]:
         data = unapply_dither(data, ss["seed"])
@@ -141,7 +139,7 @@ def couscous_scale(data):
         data = np.ceil(data).astype("int32")
         scale_factor = 1
     else:
-        scale_factor = d_max * 2**31
+        scale_factor = d_max * 2**32
         data_zeroed = (data - d_min) / scale_factor
         data = np.ceil(data_zeroed).astype("int32")
 
@@ -158,8 +156,28 @@ def couscous_scale(data):
 
 if __name__ == "__main__":
 
-    d = np.linspace(1e4, 1e12, 100)
-    data = np.sin(np.outer(d, d))
-    data_int, scale_factor = quinoa_scale(data)
-
-
+    d = np.linspace(1e4, 1e5, 100)
+    data = np.sin(np.outer(d, d)) * 16384
+    noise = np.random.random((100,100)) / 1000
+    data = data + noise
+    scale_dict = quinoa_scale(data, q=0.001)
+    
+    data_unscaled = quinoa_unscale(scale_dict)
+    
+    print scale_dict
+    print data_unscaled
+    
+    plt.figure()
+    plt.subplot(2,2,1)
+    plt.imshow(data)
+    plt.colorbar()
+    plt.subplot(2,2,2)
+    plt.imshow(scale_dict["data"])
+    plt.colorbar()
+    plt.subplot(2,2,3)
+    plt.imshow(data_unscaled)
+    plt.colorbar()
+    plt.subplot(2,2,4)
+    plt.imshow(np.abs(data - data_unscaled) / np.max(data) * 100)
+    plt.colorbar()
+    plt.show()
