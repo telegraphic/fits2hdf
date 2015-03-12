@@ -331,9 +331,11 @@ def export_hdf(idi_hdu, outfile, **kwargs):
         #    pp.debug("Adding header %s > %s" % (hkey, hval))
         #    gg.attrs[hkey] = np.array(hval)
 
+        # Need to use special dtype for variable-length strings
+        unicode_dt = h5py.special_dtype(vlen=unicode)
         if idi_hdu[gkey].comment:
-            gg.create_dataset("COMMENT", data=idi_hdu[gkey].comment)
+            gg.create_dataset("COMMENT", data=idi_hdu[gkey].comment, dtype=unicode_dt)
         if idi_hdu[gkey].history:
-            gg.create_dataset("HISTORY", data=idi_hdu[gkey].history)
+            gg.create_dataset("HISTORY", data=idi_hdu[gkey].history, dtype=unicode_dt)
 
     h.close()
