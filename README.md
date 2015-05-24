@@ -31,6 +31,7 @@ would be swell if you could cite the
 * [h5py](http://www.h5py.org/), a Pythonic interface to the HDF5 binary data format.
 
 [![astropy](http://img.shields.io/badge/powered%20by-AstroPy-orange.svg?style=flat)](http://www.astropy.org/)
+[![Documentation Status](https://readthedocs.org/projects/fits2hdf/badge/?version=latest)](https://readthedocs.org/projects/fits2hdf/?badge=latest)
 
 
 
