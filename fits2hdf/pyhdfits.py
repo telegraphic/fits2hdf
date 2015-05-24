@@ -3,14 +3,15 @@
 pyhdfits.py
 ===========
 
-Open either a FITS file, or a HDFITS file, and return a FITS object.
-Idea here is to do
+Drop-in replacement for ``pyfits / astro.io.fits``. This provides an open() function
+that opens either a FITS file, or a HDFITS file, and return a FITS object.
+The idea here to replace::
 
->> from fits2hdf import pyhdfits as pf
+    >> from astropy.io import fits as pf
 
-instead of
+with the following import::
 
->> from astropy.io import fits as pf
+    >> from fits2hdf import pyhdfits as pf
 
 So that both HDF5 and FITS files can be read transparently.
 """

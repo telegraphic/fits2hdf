@@ -1,9 +1,10 @@
 # -*- coding: utf-8 -*-
 """
-fitsio.py
-=========
+unit_conversion.py
+==================
 
-FITS I/O for reading and writing to FITS files.
+Functions for checking and sanitizing units that do not follow the FITS specification.
+This uses functions from ``astropy.unit`` to parse and handle units.
 """
 
 from astropy.units import Unit, UnrecognizedUnit
