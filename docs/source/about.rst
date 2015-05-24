@@ -4,7 +4,9 @@ About fits2hdf
 ``fits2hdf`` is a conversion to utility to port FITS files to Hierarchical Data Format (HDF5) 
 files in the HDFITS format. In addition, there is a utility to port MeasurementSets (MS)
 to HDF5 files. This work was first presented at the `ADASS XXIV <http://arxiv.org/abs/1411.0507>`_
-conference in Calgary, 2014. A more complete overview is given in `Astronomy & Computing <TODO>`_.
+conference in Calgary, 2014. A more complete overview is given in
+`Astronomy & Computing <http://www.sciencedirect.com/science/article/pii/S2213133715000554>`_.
+
 
 The ``fits2hdf`` utility works by first mapping data from FITS/MS/HDF into an in-memory interchange
 format (IDI). ``fits2hdf`` is written in python and uses h5py, pyFits, and pyrap for file I/O.
@@ -29,7 +31,8 @@ showing its age; the guiding principle that made FITS so
 successful can now be seen as its Achilles heel.
 
 The limitations of FITS are succinctly summarized in
-`Thomas et al. (2014) <TODO>`_ and `Thomas et al. (2015) <TODO>`_. Some of the limitations 
+`Thomas et al. (2014) <http://adsabs.harvard.edu/abs/2014ASPC..485..351T>`_ and
+`Thomas et al. (2015) <http://adsabs.harvard.edu/abs/2015arXiv150200996T>`_. Some of the limitations
 are quite frankly archaic: 8-character maximum keywords in the 
 FITS header, lack of Unicode support, and incomplete support of basic
 unsigned integer types. Other limitations become apparent when 
@@ -80,25 +83,27 @@ There are a bunch of alternative data formats, and if you're a free spirit
 you can always roll your own higher-level data model inside the HDF5 abstract data model. Otherwise,
 look into:
 
-    * `NDF <TODO>`_ is the file format used by Starlink. Recently, Starlink added HDF5 support, meaning
+    * `NDF <http://starlink.eao.hawaii.edu/starlink>`_ is the file format used by Starlink. Recently, Starlink added HDF5 support, meaning
       that you can use the Starlink utilities to convert from FITS into the NDF-HDF5 format.
     * `hickle <https://github.com/telegraphic/hickle>`_ provides a HDF5-based drop-in replacement 
       to the Python `pickle` package, allowing nice & lazy dumping of common python objects to file.
-    * `ASDF <TODO>`_ is a file format being developed for interchange, particularly for JWST.
-    * `MeasurementSets <TODO>`_ are how the CASA software package stores its data.  
-    * `VOTables <TODO>`_ is an XML-based format designed for the Virtual Observatory.   
+    * `ASDF <http://asdf-standard.readthedocs.org/>`_ is a file format being developed for interchange, particularly for JWST.
+    * `MeasurementSets <http://casaguides.nrao.edu/index.php?title=Measurement_Set_Contents>`_ are how the CASA software package stores its data.
+    * `VOTables <http://www.ivoa.net/documents/latest/VOT.html>`_ is an XML-based format designed for the Virtual Observatory.
 
 
 Copyright and referencing
 -------------------------
 
 This software is licensed under the MIT license. If you use this in published research, it sure
-would be swell if you could cite the  `fits2hdf Astronomy & Computing paper <TODO>`_::
+would be swell if you could cite the  `fits2hdf Astronomy & Computing paper <http://www.sciencedirect.com/science/article/pii/S2213133715000554>`_::
 
-    REFERENCE TO GO HERE
+    D.C. Price, B.R. Barsdell, L.J. Greenhill, HDFITS: Porting the FITS data model to HDF5,
+    Astronomy and Computing, Available online 22 May 2015, ISSN 2213-1337,
+    http://dx.doi.org/10.1016/j.ascom.2015.05.001.
 
 ``fits2hdf`` makes use of a few excellent packages:
     
     * `Astropy <https://www.astropy.org>`_, a community-developed core Python package for Astronomy.
-    * `h5py <TODO>`_, a Pythonic interface to the HDF5 binary data format.
+    * `h5py <https://www.h5py.org>`_, a Pythonic interface to the HDF5 binary data format.
 
