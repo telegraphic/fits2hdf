@@ -40,6 +40,8 @@ def convert_fits_to_hdf(args=None):
                         help='Add scale offset')
     parser.add_argument('-S', '--shuffle', dest='shuffle', action='store_true', default=None,
                         help='Apply byte shuffle filter')
+    parser.add_argument('-t', '--pytables', dest='table_type', action='store_true', default=None,
+                        help='Set output tables to be PyTables TABLE class, instead of HDFITES DATA_GROUP')
     parser.add_argument('-C', '--checksum', dest='checksum', action='store_true', default=None,
                         help='Compute fletcher32 checksum on datasets.')
     parser.add_argument('dir_in', help='input directory')
@@ -64,6 +66,10 @@ def convert_fits_to_hdf(args=None):
        kwargs['shuffle'] = args.shuffle
     if args.checksum is not None:
        kwargs['checksum'] = args.checksum
+    if args.table_type is not None:
+       kwargs['table_type'] = 'TABLE'
+    else:
+        kwargs['table_type'] = 'DATA_GROUP'
 
     pp = PrintLog(verbosity=args.verbosity)
     if args.verbosity == 0:

@@ -135,7 +135,10 @@ def read_hdf(infile, mode='r+', verbosity=0):
 
             for col_num in range(len(group["DATA"].dtype.fields)):
                 col_name = group["DATA"].attrs["FIELD_%i_NAME" % col_num][0]
-                col_units = group["DATA"].attrs["FIELD_%i_UNITS" % col_num][0]
+                try:
+                    col_units = group["DATA"].attrs["FIELD_%i_UNITS" % col_num][0]
+                except KeyError:
+                    col_units = None
 
                 pp.debug("Reading col %s > %s" %(gname, col_name))
                 dset = group["DATA"][col_name][:]
@@ -197,7 +200,7 @@ def read_hdf(infile, mode='r+', verbosity=0):
     return hdulist
 
 
-def export_hdf(idi_hdu, outfile, **kwargs):
+def export_hdf(idi_hdu, outfile, table_type='DATA_GROUP', **kwargs):
     """ Export to HDF file
 
 
@@ -225,7 +228,10 @@ def export_hdf(idi_hdu, outfile, **kwargs):
     if 'verbosity' in kwargs:
         verbosity = kwargs['verbosity']
 
-    table_version1 = False
+    try:
+        assert table_type in ('DATA_GROUP', 'TABLE')
+    except:
+            raise RuntimeError("Table output must be DATA_GROUP or TABLE, not %s" % table_type)
 
     h = h5py.File(outfile, mode='w')
     pp = PrintLog(verbosity=verbosity)
@@ -246,12 +252,9 @@ def export_hdf(idi_hdu, outfile, **kwargs):
         gg.attrs["POSITION"] = np.array([hdu_id])
         #hg = gg.create_group("HEADER")
 
-        # Check if the data is a table
-        if isinstance(idi_hdu[gkey], IdiTableHdu) and table_version1:
+        # Check if the data is TABLE (i.e. row-store type table)
+        if isinstance(idi_hdu[gkey], IdiTableHdu) and table_type == 'TABLE':
             try:
-                            #self.pp.verbosity = 5
-                #dg = gg.create_group("DATA")
-
                 dd = idi_hdu[gkey]
                 dd_data = dd._data
 
@@ -260,11 +263,14 @@ def export_hdf(idi_hdu, outfile, **kwargs):
                     dset.attrs["CLASS"] = np.array(["TABLE"])
 
                     col_num = 0
-                    for col_name in dd.colnames:
+                    for col_name, column in idi_hdu[gkey].columns.items():
 
-                        column = dd[col_name]
                         col_dtype = column.dtype
-                        col_units = column.unit.to_string()
+
+                        if column.unit is not None:
+                            col_units = str(column.unit)
+                        else:
+                            col_units = None
 
                         if col_dtype.type is np.string_:
                             dset.attrs["FIELD_%i_FILL" % col_num] = np.array([''])
@@ -272,7 +278,8 @@ def export_hdf(idi_hdu, outfile, **kwargs):
                             dset.attrs["FIELD_%i_FILL" % col_num] = np.array([0])
                         dset.attrs["FIELD_%i_NAME" % col_num] = np.array([col_name])
 
-                        dset.attrs["FIELD_%i_UNITS" % col_num] = np.array([str(col_units)])
+                        if col_units:
+                            dset.attrs["FIELD_%i_UNITS" % col_num] = np.array([col_units])
                         col_num += 1
 
                     dset.attrs["NROWS"]   = np.array([dd.columns[0].shape[0]])
@@ -283,9 +290,9 @@ def export_hdf(idi_hdu, outfile, **kwargs):
                 pp.err("%s" % gkey)
                 raise
 
-        if isinstance(idi_hdu[gkey], IdiTableHdu) and not table_version1:
+        # check if the data is a data group (i.e. column-store type table)
+        if isinstance(idi_hdu[gkey], IdiTableHdu) and table_type == 'DATA_GROUP':
             try:
-            # TODO: Reinstate code for DATA_STORE class (column store instead of HDF5 table)
                 col_num = 0
                 tbl_group = gg.create_group("DATA")
                 tbl_group.attrs["CLASS"] = np.array(["DATA_GROUP"])
