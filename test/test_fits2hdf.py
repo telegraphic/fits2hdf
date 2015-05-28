@@ -25,8 +25,13 @@ if __name__ == '__main__':
         'python ../fits2hdf.py fits hdf -c bitshuffle -x fits -v 0 -t',
         'python ../fits2hdf.py fits hdf -c lzf -x fits -v 0 -t',
         'python ../fits2hdf.py fits hdf -c lzf -C -S -x fits -v 0',
-        'python ../fits2hdf.py fits hdf -c lzf -S -s 1 -x fits -v 0',
+        'python ../fits2hdf.py fits hdf -c lzf -C -S -x fits -v 0 -t',
+        #'python ../fits2hdf.py fits hdf -c lzf -S -s 1 -x fits -v 0',
     ]
+
+    #NB : Scale-offset filter will cause comparison to input to fail as it is lossy
+    #NB : e.g. 'python ../fits2hdf.py fits hdf -c lzf -S -s 1 -x fits -v 0',
+    #NB : will fail
 
     for cmd2test in commands_to_test:
         if download_fits:

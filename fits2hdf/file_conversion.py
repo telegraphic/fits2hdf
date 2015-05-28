@@ -65,7 +65,7 @@ def convert_fits_to_hdf(args=None):
     if args.shuffle is not None:
        kwargs['shuffle'] = args.shuffle
     if args.checksum is not None:
-       kwargs['checksum'] = args.checksum
+       kwargs['fletcher32'] = args.checksum
     if args.table_type is not None:
        kwargs['table_type'] = 'TABLE'
     else:
