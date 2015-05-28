@@ -180,3 +180,82 @@ def convert_hdf_to_fits(args=None):
     pp.h1("\nSUMMARY")
     pp.pa("Files created: %i" % file_count)
     pp.pa("Time taken:    %2.2fs" % (time.time() - t_start))
+
+
+def convert_fits_to_fits(args=None):
+    """ Read a FITS file into the in-memory IDI format then back out into a FITS file
+
+    An input and output directory must be specified, and all files with a matching
+    extension will be converted. Command line options set the compression algorithm
+    and other run-time settings.
+    """
+    # Parse options and arguments
+    parser = argparse.ArgumentParser(description='Convert FITS files to HDF5 files in HDFITS format.')
+    parser.add_argument('-x', '--extension', dest='ext', type=str, default='fits',
+                      help='File extension of FITS files. Defaults to .fits')
+    parser.add_argument('-v', '--verbosity', dest='vb', type=int, default=0,
+                      help='verbosity level (default 0, up to 5)')
+    parser.add_argument('-w', '--nowarn', dest='warn', action='store_false', default=True,
+                      help='Turn off warnings created by FITS parsing')
+    parser.add_argument('-o', '--overwrite', dest='overwrite', action='store_true', default=False,
+                      help='Automatically overwrite output files if already exist')
+    parser.add_argument('dir_in', help='input directory')
+    parser.add_argument('dir_out', help='output_directory')
+
+    args = parser.parse_args()
+
+    dir_in  = args.dir_in
+    dir_out = args.dir_out
+
+    if not os.path.exists(dir_out):
+        print "Creating directory %s" % dir_out
+        os.mkdir(dir_out)
+
+
+    if not args.warn:
+        warnings.simplefilter("ignore")
+    try:
+        assert dir_in != dir_out
+    except AssertionError:
+        print "Input directory cannot be same as output directory."
+        exit()
+
+    # Create list of files to process
+    filelist = os.listdir(dir_in)
+    filelist = [fn for fn in filelist if fn.endswith(args.ext)]
+
+    t1 = time.time()
+    file_count = 0
+    for filename in filelist:
+
+
+        file_in = os.path.join(dir_in, filename)
+        file_out = os.path.join(dir_out, filename)
+
+        a = IdiHdulist()
+        try:
+            a = read_fits(file_in)
+            if os.path.exists(file_out):
+                if args.overwrite:
+                    os.remove(file_out)
+                else:
+                    qn = raw_input("%s exists. Overwrite (y/n)?" % file_out)
+                    if qn in ["y", "Y", "yes"]:
+                        os.remove(file_out)
+
+            print "\nCreating %s" % file_out
+            export_fits(a, file_out)
+            print "Input  filesize: %sB" % os.path.getsize(file_in)
+            print "Output filesize: %sB" % os.path.getsize(file_out)
+            compfact = float(os.path.getsize(file_in)) / float(os.path.getsize(file_out))
+            print "Compression:     %2.2fx" % compfact
+
+            file_count += 1
+
+        except IOError:
+            print "ERROR: Cannot read/write %s" % file_in
+
+    print "\nSUMMARY"
+    print "-------"
+    print "Files created: %i" % file_count
+    print "Time taken:    %2.2fs" % (time.time() - t1)
