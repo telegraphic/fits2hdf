@@ -2,7 +2,7 @@
 setup.py -- setup script for fits2hdf package
 """
 
-from setuptools import setup, Extension, Distribution, find_packages
+from setuptools import setup, find_packages
 
 # create entry points
 # see http://astropy.readthedocs.org/en/latest/development/scripts.html
@@ -16,11 +16,12 @@ entry_points = {
 setup(name='fits2hdf',
       version='1.0',
       description='FITS to HDF5 conversion utility',
+      install_requires=['h5py', 'astropy', 'colorama'],
       url='http://github.com/telegraphic/fits2hdf',
       author='Danny Price',
       author_email='dprice@cfa.harvard.edu',
       license='MIT',
       packages=find_packages(),
       zip_safe=False,
-      entry_points = entry_points
+      entry_points=entry_points,
       )

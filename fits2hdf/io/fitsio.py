@@ -404,7 +404,7 @@ def create_fits(hdul, verbosity=0):
                     new_hdu.data = idiobj.data
                     hdulist.insert(0, new_hdu)
                 except KeyError:
-                    print idiobj
+                    print(idiobj)
                     #print new_hdu
                     raise
             else:
@@ -433,7 +433,7 @@ def create_fits(hdul, verbosity=0):
 
             table_def = pf.ColDefs(fits_cols)
             pp.pp(table_def)
-            print table_def
+            print(table_def)
 
             new_hdu = pf.BinTableHDU.from_columns(table_def, name=idiobj.name)
             new_hdu = write_headers(new_hdu, idiobj)

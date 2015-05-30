@@ -11,7 +11,8 @@ Printing and logging utilities.
 import sys
 from colorama import Fore
 
-class LinePrint():
+
+class LinePrint(object):
     """
     Print things to stdout on one line dynamically
 
@@ -52,26 +53,26 @@ class PrintLog(object):
     def h2(self, headstr):
         """ Print a string as a header """
         if self.vlevel >= 2:
-            print '\n###  ', headstr
+            print('\n###  ', headstr)
 
     def h3(self, headstr):
         """ Print a string as a 3rd level header """
         if self.vlevel >= 3:
-            print "\t", headstr
+            print("\t", headstr)
 
     def pp(self, text):
         """ Print a text string """
         if self.vlevel >= 4:
-            print text
+            print(text)
 
     def pa(self, text):
         """ Always print """
-        print text
+        print(text)
 
     def debug(self, text):
         """ Print debug information to screen """
         if self.vlevel >= 5:
-            print text
+            print(text)
 
     def err(self, text):
         """ Print out an error message / warning string """
@@ -79,6 +80,6 @@ class PrintLog(object):
 
     def warn(self, text):
         """ Print out a warning message """
-        print "WARN: " + str(text)
+        print("WARN: " + str(text))
 
 

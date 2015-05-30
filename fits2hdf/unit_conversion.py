@@ -7,10 +7,9 @@ Functions for checking and sanitizing units that do not follow the FITS specific
 This uses functions from ``astropy.unit`` to parse and handle units.
 """
 
+import warnings
 from astropy.units import Unit, UnrecognizedUnit
 from astropy.io.fits.verify import VerifyWarning
-import numpy as np
-import warnings
 
 
 class UnitWarning(VerifyWarning):
@@ -72,6 +71,7 @@ def fits_to_units(unit_str):
     except ValueError:
         warnings.warn("Unknown unit: %s" % new_units, UnitWarning)
         return UnrecognizedUnit(unit_str)
+
 
 def units_to_fits(unit):
     """ Convert an astropy unit to a FITS format string.
