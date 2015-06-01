@@ -16,7 +16,6 @@ import glob
 import h5py
 
 from astropy.table import Table, Column
-import pyfits
 from astropy.io import fits as pf
 
 
