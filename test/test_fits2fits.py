@@ -7,7 +7,7 @@ from fits2hdf.io.fitsio import *
 from fits2hdf.io.hdfio import *
 from fits2hdf import idi
 import numpy as np
-import pyfits as pf
+from astropy.io import fits as pf
 import h5py
 
 import warnings

@@ -6,7 +6,7 @@ hdfio.py
 HDF I/O for reading and writing to HDF5 files.
 """
 
-import pyfits as pf
+from astropy.io import fits as pf
 import numpy as np
 import h5py
 

@@ -6,7 +6,7 @@ from fits2hdf.io.msio import *
 from fits2hdf.io.hdfio import *
 import pylab as plt
 import numpy as np
-import pyfits as pf
+from astropy.io import fits as pf
 import h5py
 
 
