@@ -26,9 +26,9 @@ def test_fits2fits():
     if run_converter:
         print("Converting FITS files to FITS..")
         if overwrite_out:
-            os.system('python ../fits2fits.py fits fits_out -w -x %s -o' % ext)
+            os.system('fits2fits fits fits_out -w -x %s -o' % ext)
         else:
-            os.system('python ../fits2fits.py fits fits_out -w -x %s' % ext)
+            os.system('fits2fits fits fits_out -w -x %s' % ext)
         #os.system('python ../fits2hdf.py fits hdf -c gzip -x fz')
 
     if run_tests:
