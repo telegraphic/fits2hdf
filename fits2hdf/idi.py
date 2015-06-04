@@ -14,7 +14,7 @@ import numpy as np
 from astropy.extern import six
 from astropy.table import Table, Column, MaskedColumn
 from astropy.nddata import NDData
-from collections import OrderedDict
+from ordereddict import OrderedDict
 
 
 class VerificationError(Exception):
