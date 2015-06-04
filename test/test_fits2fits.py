@@ -12,8 +12,7 @@ import h5py
 
 import warnings
 
-if __name__ == '__main__':
-
+def test_fits2fits():
     download_fits = False
     run_converter = True
     run_tests     = True
@@ -140,6 +139,10 @@ if __name__ == '__main__':
                         print("Test 04: OK - All attributes match between FITS and FITS_OUT")
                     else:
                         print("Test 04: ERROR - Not all attributes match")
+
+if __name__ == '__main__':
+    test_fits2fits()
+
 
 
 

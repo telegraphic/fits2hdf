@@ -12,13 +12,11 @@ from astropy.io import fits as pf
 import h5py
 import warnings
 
-if __name__ == '__main__':
-
+def test_fits2hdf():
     download_fits = False
     run_converter = True
     run_tests     = True
     ext = 'fits'
-
 
     commands_to_test = [
         'python ../fits2hdf.py fits hdf -c gzip -x fits -v 0',
@@ -93,6 +91,7 @@ if __name__ == '__main__':
                             print("Test 03a: OK - Both files as IDI have group  %s" % name)
                         except AssertionError:
                             print("Test 03a: ERROR - both files do not have group  %s" % name)
+                            raise
                         all_match = True
                         if isinstance(group, idi.IdiTableHdu):
                             for dc in group.colnames:
@@ -125,6 +124,7 @@ if __name__ == '__main__':
                             print("Test 03b: OK - All data match between FITS and HDF5")
                         else:
                             print("Test 03b: ERROR - Not all data match")
+                            raise
 
                         attr_match = True
 
@@ -157,6 +157,11 @@ if __name__ == '__main__':
                             print("Test 04: OK - All attributes match between FITS and HDF5")
                         else:
                             print("Test 04: ERROR - Not all attributes match")
+                            raise
+
+
+if __name__ == '__main__':
+    test_fits2hdf()
 
 
 
