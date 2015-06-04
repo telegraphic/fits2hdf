@@ -44,19 +44,19 @@ filelist = [
 ################################
 
 
-filelist_sdss = [
-    'http://data.sdss3.org/sas/dr12/sdss/spectro/redux/photoMatchPlate-dr12.fits',
-    'http://data.sdss3.org/sas/dr12/sdss/sspp/ssppOut-dr12.fits',
-    'http://data.sdss3.org/sas/dr12/sdss/segue2/target/seguetsObjSetAllDup-0338-3138-0101.fits'
-    ]
-
+#filelist_sdss = [
+#    'http://data.sdss3.org/sas/dr12/sdss/spectro/redux/photoMatchPlate-dr12.fits',
+#    'http://data.sdss3.org/sas/dr12/sdss/sspp/ssppOut-dr12.fits',
+#    'http://data.sdss3.org/sas/dr12/sdss/segue2/target/seguetsObjSetAllDup-0338-3138-0101.fits'
+#    ]
+#
 print "Downloading example files from FITS registry..."
 
 for filename in filelist:
     os.system('wget %s' % filename)
     os.system('mv %s fits/' % filename.split('/')[-1])
-
-print "Downloading example files from FITS registry..."
-for filename in filelist_sdss:
-    os.system('wget %s' % filename)
-    os.system('mv %s fits_sdss/' % filename.split('/')[-1])
+#
+#print "Downloading example files from FITS registry..."
+#for filename in filelist_sdss:
+#    os.system('wget %s' % filename)
+#    os.system('mv %s fits_sdss/' % filename.split('/')[-1])
