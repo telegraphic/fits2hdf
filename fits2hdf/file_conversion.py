@@ -10,7 +10,6 @@ an in-memory data structure, then converts this to a HDF5 file.
 
 import os
 import time
-import optparse
 import warnings
 
 from fits2hdf.idi import IdiHdulist
@@ -53,7 +52,7 @@ def convert_fits_to_hdf(args=None):
     dir_out = args.dir_out
 
     if not os.path.exists(dir_out):
-        print "Creating directory %s" % dir_out
+        print("Creating directory %s" % dir_out)
         os.mkdir(dir_out)
 
     # Form a list of keyword arguments to pass to HDF5 export
@@ -137,7 +136,7 @@ def convert_hdf_to_fits(args=None):
     dir_out = args.dir_out
 
     if not os.path.exists(dir_out):
-        print "Creating directory %s" % dir_out
+        print("Creating directory %s" % dir_out)
         os.mkdir(dir_out)
 
     # Form a list of keyword arguments to pass to HDF5 export
@@ -214,7 +213,7 @@ def convert_fits_to_fits(args=None):
     dir_out = args.dir_out
 
     if not os.path.exists(dir_out):
-        print "Creating directory %s" % dir_out
+        print("Creating directory %s" % dir_out)
         os.mkdir(dir_out)
 
 
@@ -223,7 +222,7 @@ def convert_fits_to_fits(args=None):
     try:
         assert dir_in != dir_out
     except AssertionError:
-        print "Input directory cannot be same as output directory."
+        print("Input directory cannot be same as output directory.")
         exit()
 
     # Create list of files to process
@@ -249,19 +248,19 @@ def convert_fits_to_fits(args=None):
                     if qn in ["y", "Y", "yes"]:
                         os.remove(file_out)
 
-            print "\nCreating %s" % file_out
+            print("\nCreating %s" % file_out)
             export_fits(a, file_out)
-            print "Input  filesize: %sB" % os.path.getsize(file_in)
-            print "Output filesize: %sB" % os.path.getsize(file_out)
+            print("Input  filesize: %sB" % os.path.getsize(file_in))
+            print("Output filesize: %sB" % os.path.getsize(file_out))
             compfact = float(os.path.getsize(file_in)) / float(os.path.getsize(file_out))
-            print "Compression:     %2.2fx" % compfact
+            print("Compression:     %2.2fx" % compfact)
 
             file_count += 1
 
         except IOError:
-            print "ERROR: Cannot read/write %s" % file_in
+            print("ERROR: Cannot read/write %s" % file_in)
 
-    print "\nSUMMARY"
-    print "-------"
-    print "Files created: %i" % file_count
-    print "Time taken:    %2.2fs" % (time.time() - t1)
+    print("\nSUMMARY")
+    print("-------")
+    print("Files created: %i" % file_count)
+    print("Time taken:    %2.2fs" % (time.time() - t1))

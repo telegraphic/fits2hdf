@@ -10,11 +10,10 @@ from astropy.io import fits as pf
 import numpy as np
 import h5py
 
-
 from ..idi import *
 from .. import idi
-import hdfcompress as bs
-from fitsio import restricted_table_keywords, restricted_header_keywords
+from . import hdfcompress as bs
+from .fitsio import restricted_table_keywords, restricted_header_keywords
 
 from ..printlog import PrintLog
 
@@ -304,7 +303,6 @@ def export_hdf(idi_hdu, outfile, table_type='DATA_GROUP', **kwargs):
 
                     dset = bs.create_dataset(tbl_group, dkey, data, **kwargs)
 
-
                     dset.attrs["CLASS"] = np.array(["COLUMN"])
                     dset.attrs["COLUMN_ID"] = np.array([col_num])
                     if dval.unit:
@@ -313,7 +311,6 @@ def export_hdf(idi_hdu, outfile, table_type='DATA_GROUP', **kwargs):
             except:
                 pp.err("%s > %s" % (gkey, dkey))
                 raise
-
 
         elif isinstance(idi_hdu[gkey], IdiImageHdu):
             pp.debug("Adding %s > DATA" % gkey)

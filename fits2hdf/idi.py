@@ -11,10 +11,10 @@ DataFrame object, and there are a few view / verify items also.
 """
 
 import numpy as np
-import six
+from astropy.extern import six
 from astropy.table import Table, Column, MaskedColumn
 from astropy.nddata import NDData
-from ordereddict import OrderedDict
+from collections import OrderedDict
 
 
 class VerificationError(Exception):
@@ -52,7 +52,7 @@ class IdiHeader(OrderedDict):
 
                 if type(val) in [bool, float, int]:
                     val = "%32s" % val
-                elif type(val) in [str, unicode]:
+                elif isinstance(val, six.text_type):
                     if len(val) < 32:
                         val = "%32s" % val
                 comment_key = key + '_COMMENT'
@@ -81,7 +81,7 @@ class IdiComment(list):
         new_comment = comment
         if isinstance(comment, type(None)):
             new_comment = []
-        elif type(comment) in (str, unicode):
+        elif isinstance(comment, six.text_type):
             new_comment = [comment]
 
         super(IdiComment, self).__init__(new_comment)

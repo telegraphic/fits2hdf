@@ -16,13 +16,12 @@ with the following import::
 So that both HDF5 and FITS files can be read transparently.
 """
 
-from astropy.io import fits as pfo
-from astropy.io.fits import *
+from astropy.io import fits
 
-from io.hdfio import *
-from io.fitsio import *
+from .io.hdfio import read_hdf
+from .io.fitsio import create_fits
 
-from check_file_type import check_file_type
+from .check_file_type import check_file_type
 
 def open(*args, **kwargs):
     """ Open a file, and return a FITS HDUList object.
@@ -40,10 +39,9 @@ def open(*args, **kwargs):
     file_name = args[0]
     file_type = check_file_type(file_name)
     if file_type == 'fits':
-        return pfo.open(*args, **kwargs)
+        return fits.open(*args, **kwargs)
     elif file_type == 'hdf':
         hdul = read_hdf(file_name)
         return create_fits(hdul)
     else:
         raise RuntimeError("File type could not be found from file extension.")
-

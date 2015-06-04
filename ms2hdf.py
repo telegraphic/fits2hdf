@@ -9,9 +9,7 @@ This is experimental, and as such expect it not to work very well.
 
 """
 
-import os, sys, time, re
-import numpy as np
-import h5py
+import time
 import optparse
 
 from fits2hdf.io.msio import *
@@ -33,7 +31,7 @@ if __name__ == '__main__':
         dir_out = args[1]
         comp = opts.comp
         if not os.path.exists(dir_out):
-            print "Creating directory %s" % dir_out
+            print("Creating directory %s" % dir_out)
             os.mkdir(dir_out)
     else:
         parser.print_usage()
@@ -53,21 +51,21 @@ if __name__ == '__main__':
         try:
             a = read_ms(file_in)
             export_hdf(a, file_out, compression=comp)
-            print "\nCreating %s" % file_out
-            print "Input  filesize: %sB" % get_size_ms(file_in)
-            print "Output filesize: %sB" % os.path.getsize(file_out)
+            print("\nCreating %s" % file_out)
+            print("Input  filesize: %sB" % get_size_ms(file_in))
+            print("Output filesize: %sB" % os.path.getsize(file_out))
             compfact = float(get_size_ms(file_in)) / float(os.path.getsize(file_out))
-            print "Compression:     %2.2fx" % compfact
+            print("Compression:     %2.2fx" % compfact)
 
             file_count += 1
 
         except IOError:
-            print "ERROR: Cannot load %s" % file_in
+            print("ERROR: Cannot load %s" % file_in)
 
-    print "\nSUMMARY"
-    print "-------"
-    print "Files created: %i" % file_count
-    print "Time taken:    %2.2fs" % (time.time() - t1)
+    print("\nSUMMARY")
+    print("-------")
+    print("Files created: %i" % file_count)
+    print("Time taken:    %2.2fs" % (time.time() - t1))
 
 
 

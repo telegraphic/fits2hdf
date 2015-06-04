@@ -11,9 +11,9 @@ import os
 try:
     import pyrap.tables as pt
 except ImportError:
-    print "ERROR: could not load pyrap"
-    print "This script requires pyrap to read and write MS files."
-    print "Please install casacore and pyrap, and re-run this script."
+    print("ERROR: could not load pyrap")
+    print("This script requires pyrap to read and write MS files.")
+    print("Please install casacore and pyrap, and re-run this script.")
     exit()
 
 from fits2hdf.printlog import PrintLog

@@ -5,7 +5,7 @@ b = fits_to_units("METERS/SEC")
 
 c = fits_to_units("Y")
 
-print a
-print b
-print units_to_fits(a)
-print units_to_fits(b)
+print(a)
+print(b)
+print(units_to_fits(a))
+print(units_to_fits(b))
