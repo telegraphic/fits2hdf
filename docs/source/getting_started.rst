@@ -26,9 +26,9 @@ Installation through ``pip`` will likely be added in the future.
 Command line usage
 ------------------
 
-To use ``fits2hdf`` to convert FITS files to HDF5, use the `fits2hdf.py` script::
+To use ``fits2hdf`` to convert FITS files to HDF5, use the `fits2hdf` command line tool::
 
-    python fits2hdf.py input_dir output_dir <options>
+    fits2hdf input_dir output_dir <options>
 
 Optional arguments are:
   -h, --help            show this help message and exit
@@ -46,9 +46,9 @@ Optional arguments are:
   -C, --checksum        Compute fletcher32 checksum on datasets.
 
 
-To convert back into FITS, run ``hdf2fits.py``, which uses similar options::
+To convert back into FITS, run ``hdf2fits``, which uses similar options::
 
-    python fits2hdf.py input_dir output_dir <options>
+    hdf2fits input_dir output_dir <options>
 
 As many HDF5 features don't have equivalents in FITS, this will (probably) only work for HDFITS files.
 
