@@ -1,0 +1,10 @@
+rm -rf build
+rm -rf dist
+rm -rf $SCRATCH/python/fitshdf5/1.0/lib/python2.7/site-packages
+mkdir -p $SCRATCH/python/fitshdf5/1.0/lib/python2.7/site-packages
+module load python/2.7-anaconda 
+export CC=cc
+export PYTHONPATH=$PYTHONPATH:$SCRATCH/python/fitshdf5/1.0/lib/python2.7/site-packages
+export PATH=$PATH:$SCRATCH/python/fitshdf5/1.0/bin
+python setup.py install --prefix=$SCRATCH/python/fitshdf5/1.0
+

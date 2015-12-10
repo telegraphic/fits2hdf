@@ -360,11 +360,12 @@ def read_fits(infile, verbosity=0):
         else:
             pp.debug("Adding Tablular HDU %s" % hdul_fits)
             # Data is tabular
-            tbl_data = Table.read(infile, hdu=hdul_fits.name)
-            idi_tbl = IdiTableHdu(hdul_fits.name, tbl_data)
-            hdul_idi.add_table_hdu(hdul_fits.name,
-                                   header=header, data=idi_tbl, history=history, comment=comment)
-
+            #tbl_data = Table.read(infile, hdu=hdul_fits.name)
+            #idi_tbl = IdiTableHdu(hdul_fits.name, tbl_data)
+            #hdul_idi.add_table_hdu(hdul_fits.name,
+            #                       header=header, data=idi_tbl, history=history, comment=comment)
+            hdul_idi.add_table_hdu(hdul_fits.name, data=hdul_fits.data[:],
+                                   header=header, history=history, comment=comment)
     return hdul_idi
 
 def create_fits(hdul, verbosity=0):
