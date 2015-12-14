@@ -29,7 +29,8 @@ def test_multihdf(x):
      finally:
          pass
 def parallel_test_multihdf():
-     n=int(sys.argv[1])
+     #n=int(sys.argv[1])
+     n=1
      p=Pool(n)
      ldir=os.listdir(rootdir)
      #print len(ldir)
