@@ -339,7 +339,7 @@ def read_fits(infile, verbosity=0):
                     hdul_idi.add_table_hdu(hdul_fits.name, data=hdul_fits.data[:],
                                            header=header, history=history, comment=comment)
                 elif hdul_fits.size == 0:
-                    hdul_idi.add_primary_hdu("HDU0",
+                    hdul_idi.add_primary_hdu("HDUx",
                                               header=header, history=history, comment=comment)
                 elif hdul_fits.is_image:
                     hdul_idi.add_image_hdu(hdul_fits.name, data=hdul_fits.data[:],
@@ -350,7 +350,7 @@ def read_fits(infile, verbosity=0):
                                            header=header, history=history, comment=comment)
             except TypeError:
                 # Primary groups HDUs can raise this error with no data
-                hdul_idi.add_primary_hdu("HDU0",
+                hdul_idi.add_primary_hdu("HDUx",
                                          header=header, history=history, comment=comment)
 
         elif isinstance(hdul_fits, compHDU):
