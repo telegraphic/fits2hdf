@@ -91,12 +91,14 @@ def read_hdf(infile, mode='r+', root_group="/", verbosity=0):
         pp.warn("No CLASS defined in HDF5 file.")
 
     if "HDFITS" not in cls:
-        pp.warn("CLASS %s: Not an HDFITS file." % cls[0])
+        #pp.warn("CLASS %s: Not an HDFITS file." % cls[0])
+        pp.warn("CLASS %s: Not an HDFITS file." % cls)
 
     # Read the order of HDUs from file
     hdu_order = {}
     for gname in h.keys():
-        pos = h[gname].attrs["POSITION"][0]
+        #pos = h[gname].attrs["POSITION"][0]
+        pos = h[gname].attrs["POSITION"]
         hdu_order[pos] = gname
 
     for pos, gname in hdu_order.items():
@@ -107,7 +109,8 @@ def read_hdf(infile, mode='r+', root_group="/", verbosity=0):
         h_vals = {}
         for key, values in group.attrs.items():
             if key not in restricted_hdf_keywords:
-                h_vals[key] = np.asscalar(values[0])
+                #h_vals[key] = np.asscalar(values[0])
+                h_vals[key] = np.asscalar(values)
                 #h_vals[key+"_COMMENT"] = values[1]
 
         #hk = group.attrs.keys()
@@ -136,9 +139,11 @@ def read_hdf(infile, mode='r+', root_group="/", verbosity=0):
             data = IdiTableHdu(gname)
 
             for col_num in range(len(group["DATA"].dtype.fields)):
-                col_name = group["DATA"].attrs["FIELD_%i_NAME" % col_num][0]
+                #col_name = group["DATA"].attrs["FIELD_%i_NAME" % col_num][0]
+                col_name = group["DATA"].attrs["FIELD_%i_NAME" % col_num]
                 try:
-                    col_units = group["DATA"].attrs["FIELD_%i_UNITS" % col_num][0]
+                    #col_units = group["DATA"].attrs["FIELD_%i_UNITS" % col_num][0]
+                    col_units = group["DATA"].attrs["FIELD_%i_UNITS" % col_num]
                 except KeyError:
                     col_units = None
 
@@ -164,7 +169,8 @@ def read_hdf(infile, mode='r+', root_group="/", verbosity=0):
             #print group["DATA"].keys()
             for col_name in group["DATA"].keys():
                 #print group["DATA"][col_name].attrs.items()
-                pos = group["DATA"][col_name].attrs["COLUMN_ID"][0]
+                #pos = group["DATA"][col_name].attrs["COLUMN_ID"][0]
+                pos = group["DATA"][col_name].attrs["COLUMN_ID"]
                 col_order[pos] = col_name
 
             #print col_order
@@ -175,10 +181,12 @@ def read_hdf(infile, mode='r+', root_group="/", verbosity=0):
                 col_dset = group["DATA"][col_name]
 
                 try:
-                    col_units = col_dset.attrs["UNITS"][0]
+                    #col_units = col_dset.attrs["UNITS"][0]
+                    col_units = col_dset.attrs["UNITS"]
                 except:
                     col_units = None
-                col_num   = col_dset.attrs["COLUMN_ID"][0]
+                #col_num   = col_dset.attrs["COLUMN_ID"][0]
+                col_num   = col_dset.attrs["COLUMN_ID"]
                 idi_col = idi.IdiColumn(col_name, col_dset[:], unit=col_units)
                 data.add_column(idi_col)
 
@@ -252,8 +260,8 @@ def export_hdf(idi_hdu, outfile, root_group="/", table_type='DATA_GROUP', **kwar
     #print outfile
     idi_hdu.hdf = h
 
-    idi_hdu.hdf.attrs["CLASS"] = np.array(["HDFITS"])
-
+    #idi_hdu.hdf.attrs["CLASS"] = np.array(["HDFITS"])
+    idi_hdu.hdf.attrs["CLASS"]="HDFITS"
     hdu_id = 0
     for gkey, gdata in idi_hdu.items():
         pp.h2("Creating %s" % gkey)
@@ -261,8 +269,10 @@ def export_hdf(idi_hdu, outfile, root_group="/", table_type='DATA_GROUP', **kwar
 
         # Create the new group
         gg = h.create_group(gkey)
-        gg.attrs["CLASS"] = np.array(["HDU"])
-        gg.attrs["POSITION"] = np.array([hdu_id])
+        #gg.attrs["CLASS"] = np.array(["HDU"])
+        gg.attrs["CLASS"]="HDU"
+        #gg.attrs["POSITION"] = np.array([hdu_id])
+        gg.attrs["POSITION"] = hdu_id
         #hg = gg.create_group("HEADER")
 
         # Check if the data is TABLE (i.e. row-store type table)
@@ -273,8 +283,8 @@ def export_hdf(idi_hdu, outfile, root_group="/", table_type='DATA_GROUP', **kwar
 
                 if dd is not None:
                     dset = bs.create_dataset(gg, "DATA", dd_data, **kwargs)
-                    dset.attrs["CLASS"] = np.array(["TABLE"])
-
+                    #dset.attrs["CLASS"] = np.array(["TABLE"])
+                    dset.attrs["CLASS"] = "TABLE"
                     col_num = 0
                     for col_name, column in idi_hdu[gkey].columns.items():
 
@@ -286,19 +296,26 @@ def export_hdf(idi_hdu, outfile, root_group="/", table_type='DATA_GROUP', **kwar
                             col_units = None
 
                         if col_dtype.type is np.string_:
-                            dset.attrs["FIELD_%i_FILL" % col_num] = np.array([''])
+                            #dset.attrs["FIELD_%i_FILL" % col_num] = np.array([''])
+                            dset.attrs["FIELD_%i_FILL" % col_num] = ''
                         else:
-                            dset.attrs["FIELD_%i_FILL" % col_num] = np.array([0])
-                        dset.attrs["FIELD_%i_NAME" % col_num] = np.array([col_name])
+                            #dset.attrs["FIELD_%i_FILL" % col_num] = np.array([0])
+                            dset.attrs["FIELD_%i_FILL" % col_num] = 0
+                        #dset.attrs["FIELD_%i_NAME" % col_num] = np.array([col_name])
+                        dset.attrs["FIELD_%i_NAME" % col_num] = col_name
 
                         if col_units:
-                            dset.attrs["FIELD_%i_UNITS" % col_num] = np.array([col_units])
+                            #dset.attrs["FIELD_%i_UNITS" % col_num] = np.array([col_units])
+                            dset.attrs["FIELD_%i_UNITS" % col_num] = col_units
                         col_num += 1
 
-                    dset.attrs["NROWS"]   = np.array([dd.columns[0].shape[0]])
-                    dset.attrs["VERSION"] = np.array([2.6])     #TODO: Move this version no
-                    dset.attrs["TITLE"]   = np.array([gkey])
-
+                    #dset.attrs["NROWS"]   = np.array([dd.columns[0].shape[0]])
+                    #dset.attrs["VERSION"] = np.array([2.6])     #TODO: Move this version no
+                    #dset.attrs["TITLE"]   = np.array([gkey])
+                    dset.attrs["NROWS"]   = dd.columns[0].shape[0]
+                    #dset.attrs["VERSION"] = 2.6]     #TODO: Move this version no
+                    dset.attrs["TITLE"]   = gkey
+                    dset.attrs["VERSION"] = "2.6"
             except:
                 pp.err("%s" % gkey)
                 raise
@@ -308,8 +325,8 @@ def export_hdf(idi_hdu, outfile, root_group="/", table_type='DATA_GROUP', **kwar
             try:
                 col_num = 0
                 tbl_group = gg.create_group("DATA")
-                tbl_group.attrs["CLASS"] = np.array(["DATA_GROUP"])
-
+                #tbl_group.attrs["CLASS"] = np.array(["DATA_GROUP"])
+                tbl_group.attrs["CLASS"] ="DATA_GROUP"
                 for dkey, dval in idi_hdu[gkey].columns.items():
                     data = dval.data
                     #print "Adding col %s > %s" % (gkey, dkey)
@@ -317,10 +334,13 @@ def export_hdf(idi_hdu, outfile, root_group="/", table_type='DATA_GROUP', **kwar
 
                     dset = bs.create_dataset(tbl_group, dkey, data, **kwargs)
 
-                    dset.attrs["CLASS"] = np.array(["COLUMN"])
-                    dset.attrs["COLUMN_ID"] = np.array([col_num])
+                    #dset.attrs["CLASS"] = np.array(["COLUMN"])
+                    #dset.attrs["COLUMN_ID"] = np.array([col_num])
+                    dset.attrs["CLASS"] = "COLUMN"
+                    dset.attrs["COLUMN_ID"] = col_num
                     if dval.unit:
-                        dset.attrs["UNITS"] = np.array([str(dval.unit)])
+                        #dset.attrs["UNITS"] = np.array([str(dval.unit)])
+                        dset.attrs["UNITS"] = str(dval.unit)
                     col_num += 1
             except:
                 pp.err("%s > %s" % (gkey, dkey))
@@ -331,11 +351,15 @@ def export_hdf(idi_hdu, outfile, root_group="/", table_type='DATA_GROUP', **kwar
             dset = bs.create_dataset(gg, "DATA", idi_hdu[gkey].data, **kwargs)
 
             # Add image-specific attributes
-            dset.attrs["CLASS"] = np.array(["IMAGE"])
-            dset.attrs["IMAGE_VERSION"] = np.array(["1.2"])
+            #dset.attrs["CLASS"] = np.array(["IMAGE"])
+            dset.attrs["CLASS"] = "IMAGE"
+            #dset.attrs["IMAGE_VERSION"] = np.array(["1.2"])
+            dset.attrs["IMAGE_VERSION"] = "1.2"
             if idi_hdu[gkey].data.ndim == 2:
-                dset.attrs["IMAGE_SUBCLASS"] = np.array(["IMAGE_GRAYSCALE"])
-                dset.attrs["IMAGE_MINMAXRANGE"] = np.array([np.min(idi_hdu[gkey].data), np.max(idi_hdu[gkey].data)])
+                #dset.attrs["IMAGE_SUBCLASS"] = np.array(["IMAGE_GRAYSCALE"])
+                dset.attrs["IMAGE_SUBCLASS"] = "IMAGE_GRAYSCALE"
+                #dset.attrs["IMAGE_MINMAXRANGE"] = np.array([np.min(idi_hdu[gkey].data), np.max(idi_hdu[gkey].data)])
+                dset.attrs["IMAGE_MINMAXRANGE"] = str(np.min(idi_hdu[gkey].data))+","+str(np.max(idi_hdu[gkey].data))
 
         elif isinstance(idi_hdu[gkey], IdiPrimaryHdu):
             pass
