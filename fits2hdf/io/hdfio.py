@@ -57,8 +57,10 @@ def write_headers(hduobj, idiobj, verbosity=0):
         if is_comment or is_table or is_basic or is_hdf:
             pass
         else:
-            hduobj.attrs[key] = np.array([value])
-            hduobj.attrs[key+"_COMMENT"] = np.array([comment])
+            #hduobj.attrs[key] = np.array([value])
+            #hduobj.attrs[key+"_COMMENT"] = np.array([comment])
+            hduobj.attrs[key] = value
+            hduobj.attrs[key+"_COMMENT"] = comment
     return hduobj
 
 def read_hdf(infile, mode='r+', root_group="/", verbosity=0):
