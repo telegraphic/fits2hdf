@@ -1,0 +1,6 @@
+#!/bin/bash
+export fitsinput=/global/projecta/projectdirs/sdss/data/sdss/dr12/boss/spectro/redux/v5_7_0/
+export hdfoutput=$SCRATCH/hdf-data
+module load python/2.7-anaconda
+export PYTHONPATH=$PYTHONPATH:$SCRATCH/python/fitshdf5/1.0/lib/python2.7/site-packages
+export PATH=$PATH:$SCRATCH/python/fitshdf5/1.0/bin

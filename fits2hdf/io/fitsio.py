@@ -318,12 +318,13 @@ def read_fits(infile, verbosity=0):
 
     hdul_idi.fits = ff
 
-    ii = 0
+    ii = 1
     for hdul_fits in ff:
         if hdul_fits.name in ('', None, ' '):
             hdul_fits.name = "HDU%i" % ii
             ii += 1
-
+        if hdul_fits.name== "PRIMARY":
+            hdul_fits.name = "HDU0"
         header, history, comment = parse_fits_header(hdul_fits)
 
         ImageHDU   = pf.hdu.ImageHDU
@@ -360,11 +361,12 @@ def read_fits(infile, verbosity=0):
         else:
             pp.debug("Adding Tablular HDU %s" % hdul_fits)
             # Data is tabular
-            tbl_data = Table.read(infile, hdu=hdul_fits.name)
-            idi_tbl = IdiTableHdu(hdul_fits.name, tbl_data)
-            hdul_idi.add_table_hdu(hdul_fits.name,
-                                   header=header, data=idi_tbl, history=history, comment=comment)
-
+            #tbl_data = Table.read(infile, hdu=hdul_fits.name)
+            #idi_tbl = IdiTableHdu(hdul_fits.name, tbl_data)
+            #hdul_idi.add_table_hdu(hdul_fits.name,
+            #                       header=header, data=idi_tbl, history=history, comment=comment)
+            hdul_idi.add_table_hdu(hdul_fits.name, data=hdul_fits.data[:],
+                                   header=header, history=history, comment=comment)
     return hdul_idi
 
 def create_fits(hdul, verbosity=0):

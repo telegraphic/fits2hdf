@@ -8,27 +8,34 @@ from fits2hdf import idi
 import numpy as np
 from astropy.io import fits as pf
 import h5py
-
-
-def test_multihdf():
-
-    filenames = ["eagle.fits", "FGSf64y0106m_a1f.fits", "EUVEngc4151imgx.fits"]
-    try:
-        for fname in filenames:
-            a = read_fits('fits/' + fname)
-
-            export_hdf(a, "output.hdf", root_group=fname)
-            h = h5py.File("output.hdf")
-            print h.keys()
-            h.close()
-
-    except:
-        raise
-    finally:
-        #os.remove("output.hdf")
-        pass
-
-
-
+from multiprocessing import Pool
+rootdir= "/global/projecta/projectdirs/sdss/data/sdss/dr12/boss/spectro/redux/v5_7_0/"
+outputd ="/global/cscratch1/sd/jialin/hdf-data/v5_7_0/"
+def test_multihdf(x):
+     thedir = rootdir+str(x)+"/"
+     try:
+         count=0
+         for fname in os.listdir(thedir):
+             if "fits" in fname or "gz" in fname:
+	        #print fname
+                a = read_fits(thedir + fname)   
+                #outputf=outputd+thedir.split('/')[-1]+".h5"
+                outputf=outputd+str(x)+".h5" 
+                export_hdf(a, outputf, root_group=fname)
+                count=count+1
+         #print "combining "+count+"in "+str(x)
+     except TypeError:
+         print x
+     finally:
+         pass
+def parallel_test_multihdf():
+     #n=int(sys.argv[1])
+     n=1
+     p=Pool(n)
+     ldir=os.listdir(rootdir)
+     #print len(ldir)
+     lldir=[fn for fn in ldir if fn.isdigit()]
+     #print len(lldir)
+     p.map(test_multihdf,lldir)
 if __name__ == '__main__':
-    test_multihdf()
+    parallel_test_multihdf()

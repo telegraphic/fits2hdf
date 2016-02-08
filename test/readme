@@ -1,0 +1,18 @@
+combining fits into hdf5
+
+serial test: 
+
+source ../cori-setup
+python -W ignore h5fits-serial.py 4440
+*****************Start******************
+Totally, 128 fits files in folder: /global/projecta/projectdirs/sdss/data/sdss/dr12/boss/spectro/redux/v5_7_0/4440/
+****************In Progress*************
+number of files 128
+Combined 128 fits to hdf5, costs  177.870314121  seconds
+Check output at  /global/cscratch1/sd/jialin/hdf-data/v5_7_0-sample/sample/
+*****************End********************
+
+
+parallel test:
+
+
