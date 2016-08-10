@@ -1,2 +1,3 @@
-import fitsio
-import hdfio
+from __future__ import absolute_import
+from . import fitsio
+from . import hdfio

@@ -5,7 +5,8 @@ check_file_type.py
 
 Utilities for checking what kind of file (HDF5 or FITS) a filepath is.
 """
-
+import six
+if six.PY2: FileNotFoundError = IOError
 import os
 
 # FITS file signature as per RFC 4047
@@ -29,10 +30,11 @@ def is_hdf5(filepath):
     filepath: str
         Path to file
     """
-    with open(str(filepath),'r') as f:
+    with open(str(filepath),'rb') as f:
         try:
             return f.read(8) == HDF5_SIGNATURE
-        except (OSError,IOError):
+        except FileNotFoundError as e:
+            print(e)
             return False
 
 
@@ -47,10 +49,12 @@ def is_fits(filepath):
     filepath: str
         Path to file
     """
-    with open(str(filepath),'r') as f:
-        return fileobj.read(30) == FITS_SIGNATURE
-    except (OSError,IOError):
-        return False
+    with open(str(filepath),'rb') as f:
+        try:
+            return f.read(30) == FITS_SIGNATURE
+        except FileNotFoundError as e:
+            print(e)
+            return False
 
 def check_file_type(file_name):
     """

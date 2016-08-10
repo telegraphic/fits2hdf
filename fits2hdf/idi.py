@@ -11,10 +11,10 @@ DataFrame object, and there are a few view / verify items also.
 """
 
 import numpy as np
-from astropy.extern import six
+import six
 from astropy.table import Table, Column, MaskedColumn
 from astropy.nddata import NDData
-from ordereddict import OrderedDict
+from collections import OrderedDict
 
 
 class VerificationError(Exception):

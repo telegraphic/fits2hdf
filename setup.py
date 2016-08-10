@@ -1,7 +1,7 @@
+#!/usr/bin/env python
 """
 setup.py -- setup script for fits2hdf package
 """
-
 from setuptools import setup, find_packages
 
 # create entry points
