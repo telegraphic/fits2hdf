@@ -25,13 +25,13 @@ def test_scaling():
     data = generate_data()
     
     scale_dict = quinoa_scale(data, q=4)
-    print scale_dict
+    print(scale_dict)
     #print "Noise estimate: %s" % np.max(scale_dict["data"])
-    print "Max value in scaled data: %s" % np.max(scale_dict["data"])
+    print("Max value in scaled data: %s" % np.max(scale_dict["data"]))
     unscaled = quinoa_unscale(scale_dict)
     
     precision = np.average(np.abs(data - unscaled) / np.nanmax(data)) * 100
-    print "Precision: %2.2f%%" % precision
+    print("Precision: %2.2f%%" % precision)
     assert np.allclose(data, unscaled, rtol=1)
     
 
