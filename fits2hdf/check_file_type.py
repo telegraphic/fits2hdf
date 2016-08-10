@@ -29,14 +29,11 @@ def is_hdf5(filepath):
     filepath: str
         Path to file
     """
-    fileobj = open(filepath)
-    loc = fileobj.tell()
-    try:
-        signature = fileobj.read(8)
-    finally:
-        fileobj.seek(loc)
-    fileobj.close()
-    return signature == HDF5_SIGNATURE
+    with open(str(filepath),'r') as f:
+        try:
+            return f.read(8) == HDF5_SIGNATURE
+        except (OSError,IOError):
+            return False
 
 
 def is_fits(filepath):
@@ -50,13 +47,10 @@ def is_fits(filepath):
     filepath: str
         Path to file
     """
-    fileobj = open(filepath)
-    pos = fileobj.tell()
-    sig = fileobj.read(30)
-    fileobj.seek(pos)
-    fileobj.close()
-    return sig == FITS_SIGNATURE
-
+    with open(str(filepath),'r') as f:
+        return fileobj.read(30) == FITS_SIGNATURE
+    except (OSError,IOError):
+        return False
 
 def check_file_type(file_name):
     """
