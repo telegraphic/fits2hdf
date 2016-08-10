@@ -41,7 +41,10 @@ class IdiHeader(OrderedDict):
     """
     def __init__(self, values=None):
 
-        super(IdiHeader, self).__init__(values)
+        if values is not None:
+            super(IdiHeader, self).__init__(values)
+        else:
+            super(IdiHeader, self).__init__()
 
     def __repr__(self):
         to_print = ''

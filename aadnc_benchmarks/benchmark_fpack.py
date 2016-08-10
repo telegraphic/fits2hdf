@@ -5,18 +5,13 @@ benchmark compression
 Generate benchmarks for AANDC paper.
 
 """
-
-import numpy as np
-from os.path import join, getsize,exists
-import os, sys
-from fits2hdf import idi
-from fits2hdf.io import hdfio, fitsio
+from os.path import  getsize
+import os
 import time
 import glob
+import subprocess
 
-from astropy.table import Table, Column
-
-fits_dir = sys.argv[1]
+fits_dir = 'fits_generated'
 
 for fits_filename in glob.glob(os.path.join(fits_dir, '*.fits')):
 
@@ -25,12 +20,10 @@ for fits_filename in glob.glob(os.path.join(fits_dir, '*.fits')):
         os.remove(fits_comp_filename)
 
     t0 = time.time()
-    os.system("./fpack -table %s" % fits_filename)
+    subprocess.check_call(['fpack','-table',fits_filename])
     t1 = time.time()
-    
 
 
-    
     dd = {
         'img_name': fits_filename,
         'fits_size': getsize(fits_filename),
@@ -38,9 +31,9 @@ for fits_filename in glob.glob(os.path.join(fits_dir, '*.fits')):
         'comp_fact_fits': float(getsize(fits_filename)) / getsize(fits_comp_filename),
         'fits_comp_time': (t1 - t0)
         }
-        
-    print fits_filename
-    print "FITS file size:        %sB" % dd['fits_size']
-    print "FITS comp size:        %sB" % dd['fits_comp_size']
-    print "FITS comp time:        %2.2fs" % dd['fits_comp_time']
-    print "FITS/FITS compression: %2.2fx\n" % dd['comp_fact_fits']
+
+    print(fits_filename)
+    print("FITS file size:        %sB" % dd['fits_size'])
+    print("FITS comp size:        %sB" % dd['fits_comp_size'])
+    print("FITS comp time:        %2.2fs" % dd['fits_comp_time'])
+    print("FITS/FITS compression: %2.2fx\n" % dd['comp_fact_fits'])
