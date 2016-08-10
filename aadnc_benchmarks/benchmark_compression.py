@@ -237,7 +237,7 @@ if __name__== "__main__":
         }
 
     print("HDF5 compression options:")
-    for option, optval in list(hdf_opts.items()):
+    for option, optval in hdf_opts.items():
         print("    ", option, optval)
 
     #file_info = create_image(img_name, img_data, hdf_opts=hdf_opts)
