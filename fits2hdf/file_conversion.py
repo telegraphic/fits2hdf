@@ -18,7 +18,7 @@ from fits2hdf.io.hdfio import *
 
 from fits2hdf.printlog import PrintLog
 
-from astropy.utils.compat import argparse
+import argparse
 
 def convert_fits_to_hdf(args=None):
     """ Convert a FITS file to HDF5 in HDFITS format
@@ -219,11 +219,9 @@ def convert_fits_to_fits(args=None):
 
     if not args.warn:
         warnings.simplefilter("ignore")
-    try:
-        assert dir_in != dir_out
-    except AssertionError:
-        print("Input directory cannot be same as output directory.")
-        exit()
+
+    if dir_in == dir_out:
+        raise ValueError("Input directory cannot be same as output directory.")
 
     # Create list of files to process
     filelist = os.listdir(dir_in)

@@ -218,128 +218,126 @@ def export_hdf(idi_hdu, outfile, table_type='DATA_GROUP', **kwargs):
         chunks=None, set chunk size
     """
 
-    try:
-        assert isinstance(idi_hdu, IdiHdulist)
-    except:
+    if not isinstance(idi_hdu, IdiHdulist):
         raise RuntimeError("This function must be run on an IdiHdulist object")
 
     verbosity = 0
     if 'verbosity' in kwargs:
         verbosity = kwargs['verbosity']
 
-    try:
-        assert table_type in ('DATA_GROUP', 'TABLE')
-    except:
-            raise RuntimeError("Table output must be DATA_GROUP or TABLE, not %s" % table_type)
+    if not table_type in ('DATA_GROUP', 'TABLE'):
+        raise RuntimeError("Table output must be DATA_GROUP or TABLE, not %s" % table_type)
 
-    h = h5py.File(outfile, mode='w')
     pp = PrintLog(verbosity=verbosity)
 
-    #print outfile
-    idi_hdu.hdf = h
+    with h5py.File(outfile, mode='w') as h:
+        #print outfile
+        idi_hdu.hdf = h
 
-    idi_hdu.hdf.attrs["CLASS"] = np.array(["HDFITS"])
+        idi_hdu.hdf.attrs["CLASS"] = np.string_(["HDFITS"])
 
-    hdu_id = 0
-    for gkey, gdata in idi_hdu.items():
-        pp.h2("Creating %s" % gkey)
-        hdu_id += 1
+        hdu_id = 0
+        for gkey, gdata in idi_hdu.items():
+            pp.h2("Creating %s" % gkey)
+            hdu_id += 1
 
-        # Create the new group
-        gg = h.create_group(gkey)
-        gg.attrs["CLASS"] = np.array(["HDU"])
-        gg.attrs["POSITION"] = np.array([hdu_id])
-        #hg = gg.create_group("HEADER")
+            # Create the new group
+            gg = h.create_group(gkey)
+            gg.attrs["CLASS"] = np.string_(["HDU"])
+            gg.attrs["POSITION"] = np.array([hdu_id])
+            #hg = gg.create_group("HEADER")
 
-        # Check if the data is TABLE (i.e. row-store type table)
-        if isinstance(idi_hdu[gkey], IdiTableHdu) and table_type == 'TABLE':
-            try:
-                dd = idi_hdu[gkey]
-                dd_data = dd._data
+            # Check if the data is TABLE (i.e. row-store type table)
+            if isinstance(idi_hdu[gkey], IdiTableHdu) and table_type == 'TABLE':
+                try:
+                    dd = idi_hdu[gkey]
+                    dd_data = dd._data
 
-                if dd is not None:
-                    dset = bs.create_dataset(gg, "DATA", dd_data, **kwargs)
-                    dset.attrs["CLASS"] = np.array(["TABLE"])
+                    if dd is not None:
+                        dset = bs.create_dataset(gg, "DATA", dd_data, **kwargs)
+                        dset.attrs["CLASS"] = np.string_(["TABLE"])
 
+                        col_num = 0
+                        for col_name, column in idi_hdu[gkey].columns.items():
+
+                            col_dtype = column.dtype
+
+                            if column.unit is not None:
+                                col_units = str(column.unit)
+                            else:
+                                col_units = None
+
+                            if col_dtype.type is np.string_:
+                                dset.attrs["FIELD_%i_FILL" % col_num] = np.array([''])
+                            else:
+                                dset.attrs["FIELD_%i_FILL" % col_num] = np.array([0])
+                            dset.attrs["FIELD_%i_NAME" % col_num] = np.array([col_name])
+
+                            if col_units:
+                                dset.attrs["FIELD_%i_UNITS" % col_num] = np.array([col_units])
+                            col_num += 1
+
+                        dset.attrs["NROWS"]   = np.array([dd.columns[0].shape[0]])
+                        dset.attrs["VERSION"] = np.array([2.6])     #TODO: Move this version no
+                        dset.attrs["TITLE"]   = np.array([gkey])
+
+                except:
+                    pp.err("%s" % gkey)
+                    raise
+
+            # check if the data is a data group (i.e. column-store type table)
+            if isinstance(idi_hdu[gkey], IdiTableHdu) and table_type == 'DATA_GROUP':
+                try:
                     col_num = 0
-                    for col_name, column in idi_hdu[gkey].columns.items():
+                    tbl_group = gg.create_group("DATA")
+                    tbl_group.attrs["CLASS"] = np.array(["DATA_GROUP"])
 
-                        col_dtype = column.dtype
+                    for dkey, dval in idi_hdu[gkey].columns.items():
+                        data = dval.data
+                        #print "Adding col %s > %s" % (gkey, dkey)
+                        pp.debug("Adding col %s > %s" % (gkey, dkey))
 
-                        if column.unit is not None:
-                            col_units = str(column.unit)
-                        else:
-                            col_units = None
+                        dset = bs.create_dataset(tbl_group, dkey, data, **kwargs)
 
-                        if col_dtype.type is np.string_:
-                            dset.attrs["FIELD_%i_FILL" % col_num] = np.array([''])
-                        else:
-                            dset.attrs["FIELD_%i_FILL" % col_num] = np.array([0])
-                        dset.attrs["FIELD_%i_NAME" % col_num] = np.array([col_name])
-
-                        if col_units:
-                            dset.attrs["FIELD_%i_UNITS" % col_num] = np.array([col_units])
+                        dset.attrs["CLASS"] = np.array(["COLUMN"])
+                        dset.attrs["COLUMN_ID"] = np.array([col_num])
+                        if dval.unit:
+                            dset.attrs["UNITS"] = np.array([str(dval.unit)])
                         col_num += 1
+                except:
+                    pp.err("%s > %s" % (gkey, dkey))
+                    raise
 
-                    dset.attrs["NROWS"]   = np.array([dd.columns[0].shape[0]])
-                    dset.attrs["VERSION"] = np.array([2.6])     #TODO: Move this version no
-                    dset.attrs["TITLE"]   = np.array([gkey])
+            elif isinstance(idi_hdu[gkey], IdiImageHdu):
+                pp.debug("Adding %s > DATA" % gkey)
+                dset = bs.create_dataset(gg, "DATA", idi_hdu[gkey].data, **kwargs)
 
-            except:
-                pp.err("%s" % gkey)
-                raise
+                # Add image-specific attributes
+                dset.attrs["CLASS"] = np.string_(["IMAGE"])
+                dset.attrs["IMAGE_VERSION"] = np.string_(["1.2"])
+                if idi_hdu[gkey].data.ndim == 2:
+                    dset.attrs["IMAGE_SUBCLASS"] = np.string_(["IMAGE_GRAYSCALE"])
+                    dset.attrs["IMAGE_MINMAXRANGE"] = np.array([np.min(idi_hdu[gkey].data), np.max(idi_hdu[gkey].data)])
 
-        # check if the data is a data group (i.e. column-store type table)
-        if isinstance(idi_hdu[gkey], IdiTableHdu) and table_type == 'DATA_GROUP':
-            try:
-                col_num = 0
-                tbl_group = gg.create_group("DATA")
-                tbl_group.attrs["CLASS"] = np.array(["DATA_GROUP"])
+            elif isinstance(idi_hdu[gkey], IdiPrimaryHdu):
+                pass
 
-                for dkey, dval in idi_hdu[gkey].columns.items():
-                    data = dval.data
-                    #print "Adding col %s > %s" % (gkey, dkey)
-                    pp.debug("Adding col %s > %s" % (gkey, dkey))
+            # Add header values
+            #print self[gkey].header
 
-                    dset = bs.create_dataset(tbl_group, dkey, data, **kwargs)
+            write_headers(gg, idi_hdu[gkey], verbosity=verbosity)
+            #for hkey, hval in idi_hdu[gkey].header.items():
+            #
+            #    pp.debug("Adding header %s > %s" % (hkey, hval))
+            #    gg.attrs[hkey] = np.array(hval)
 
-                    dset.attrs["CLASS"] = np.array(["COLUMN"])
-                    dset.attrs["COLUMN_ID"] = np.array([col_num])
-                    if dval.unit:
-                        dset.attrs["UNITS"] = np.array([str(dval.unit)])
-                    col_num += 1
-            except:
-                pp.err("%s > %s" % (gkey, dkey))
-                raise
+            # Need to use special dtype for variable-length strings
+            if six.PY2:
+                unicode_dt = h5py.special_dtype(vlen=unicode)
+            else:
+                unicode_dt = h5py.special_dtype(vlen=str)
 
-        elif isinstance(idi_hdu[gkey], IdiImageHdu):
-            pp.debug("Adding %s > DATA" % gkey)
-            dset = bs.create_dataset(gg, "DATA", idi_hdu[gkey].data, **kwargs)
-
-            # Add image-specific attributes
-            dset.attrs["CLASS"] = np.array(["IMAGE"])
-            dset.attrs["IMAGE_VERSION"] = np.array(["1.2"])
-            if idi_hdu[gkey].data.ndim == 2:
-                dset.attrs["IMAGE_SUBCLASS"] = np.array(["IMAGE_GRAYSCALE"])
-                dset.attrs["IMAGE_MINMAXRANGE"] = np.array([np.min(idi_hdu[gkey].data), np.max(idi_hdu[gkey].data)])
-
-        elif isinstance(idi_hdu[gkey], IdiPrimaryHdu):
-            pass
-
-        # Add header values
-        #print self[gkey].header
-
-        write_headers(gg, idi_hdu[gkey], verbosity=verbosity)
-        #for hkey, hval in idi_hdu[gkey].header.items():
-        #
-        #    pp.debug("Adding header %s > %s" % (hkey, hval))
-        #    gg.attrs[hkey] = np.array(hval)
-
-        # Need to use special dtype for variable-length strings
-        unicode_dt = h5py.special_dtype(vlen=unicode)
-        if idi_hdu[gkey].comment:
-            gg.create_dataset("COMMENT", data=idi_hdu[gkey].comment, dtype=unicode_dt)
-        if idi_hdu[gkey].history:
-            gg.create_dataset("HISTORY", data=idi_hdu[gkey].history, dtype=unicode_dt)
-
-    h.close()
+            if idi_hdu[gkey].comment:
+                gg.create_dataset("COMMENT", data=idi_hdu[gkey].comment, dtype=unicode_dt)
+            if idi_hdu[gkey].history:
+                gg.create_dataset("HISTORY", data=idi_hdu[gkey].history, dtype=unicode_dt)

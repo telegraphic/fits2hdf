@@ -12,10 +12,15 @@ http://data.sdss3.org/
 """
 
 import os
+import subprocess
 
-for dname in ('fits', 'fits_sdss'):
-    if not os.path.exists(dname):
-        os.mkdir(dname)
+FDIR = 'fits'
+
+#for dname in (FDIR, 'fits_sdss'):
+try:
+    os.mkdir(FDIR)
+except OSError:
+    pass
 
 ################################
 ## Download example fits from FITS registry
@@ -34,7 +39,7 @@ filelist = [
     'http://fits.gsfc.nasa.gov/samples/IUElwp25637mxlo.fits',
     'http://fits.gsfc.nasa.gov/samples/EUVEngc4151imgx.fits',
     'http://fits.gsfc.nasa.gov/samples/DDTSUVDATA.fits',
-    'http://fits.gsfc.nasa.gov/samples/testkeys.fits'    
+    'http://fits.gsfc.nasa.gov/samples/testkeys.fits'
     ]
 
 
@@ -50,11 +55,10 @@ filelist = [
 #    'http://data.sdss3.org/sas/dr12/sdss/segue2/target/seguetsObjSetAllDup-0338-3138-0101.fits'
 #    ]
 #
-print "Downloading example files from FITS registry..."
+print("Downloading example files from FITS registry...")
 
 for filename in filelist:
-    os.system('wget %s' % filename)
-    os.system('mv %s fits/' % filename.split('/')[-1])
+    subprocess.check_call(['wget','-nc','-nd','-P',FDIR,filename])
 #
 #print "Downloading example files from FITS registry..."
 #for filename in filelist_sdss:

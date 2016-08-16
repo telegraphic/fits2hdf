@@ -164,8 +164,8 @@ if __name__ == "__main__":
     
     data_unscaled = quinoa_unscale(scale_dict)
     
-    print scale_dict
-    print data_unscaled
+    print(scale_dict)
+    print(data_unscaled)
     
     plt.figure()
     plt.subplot(2,2,1)

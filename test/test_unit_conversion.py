@@ -1,4 +1,4 @@
-from fits2hdf.unit_conversion import *
+from fits2hdf.unit_conversion import fits_to_units,units_to_fits
 
 a = fits_to_units("DEGREES/DAY")
 b = fits_to_units("METERS/SEC")
