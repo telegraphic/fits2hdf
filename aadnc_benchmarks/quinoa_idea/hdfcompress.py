@@ -8,12 +8,11 @@ Helper functions for writing bitshuffled compressed datatsets
 """
 
 import numpy as np
-import h5py
-from h5py import h5f, h5d, h5z, h5t, h5s, filters
+from h5py import  h5z
 
 import quinoa
 
-from .. import printlog
+from fits2hdf.printlog import PrintLog
 
 try:
     from bitshuffle import h5
@@ -90,17 +89,17 @@ def create_compressed(hgroup, name, data, **kwargs):
             pass
 
         if data.ndim == 2:
-            print "QUINOA: scaling %s " % name
+            print("QUINOA: scaling %s " % name)
             qdata = quinoa.quinoa_scale(data, q=q, subtractive_dither=do_dither)
             data = qdata["data"]
             #data = quinoa.quinoa_unscale(qdata)
             #dtype = "int32"
             for key in qdata:
                 if key != 'data':
-                    print "QUINOA: %s: %s" % (key, qdata[key])
+                    print("QUINOA: %s: %s" % (key, qdata[key]))
 
         #print "Creating bitshuffled dataset %s" % hgroup
-        print data.dtype
+        print(data.dtype)
         h5.create_dataset(hgroup, name, data.shape, data.dtype, chunks,
                           filter_pipeline=(32008,),
                           filter_flags=(h5z.FLAG_MANDATORY,),
@@ -148,7 +147,7 @@ def create_dataset(hgroup, name, data, **kwargs):
     if 'verbosity' in kwargs:
         verbosity = kwargs.pop('verbosity')
 
-    pp = printlog.PrintLog(verbosity)
+    pp = PrintLog(verbosity)
 
     np_types = [
             np.uint8,

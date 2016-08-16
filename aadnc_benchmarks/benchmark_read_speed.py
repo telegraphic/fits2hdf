@@ -7,15 +7,14 @@ Generate benchmarks for AANDC paper.
 """
 
 import numpy as np
-from os.path import join, getsize,exists
-import os, sys
+from os.path import join,exists
+from shutil import copy2
+import os
 from fits2hdf import idi
 from fits2hdf.io import hdfio, fitsio
 import time
-import glob
 import h5py
 
-from astropy.table import Table, Column
 from astropy.io import fits as pf
 
 
@@ -41,7 +40,7 @@ def create_image(img_name, data, hdf_opts={}):
         if exists(fname):
             os.remove(fname)
 
-    print "\nWriting %s to disk" % img_name
+    print("\nWriting %s to disk" % img_name)
     t1 = time.time()
     fitsio.export_fits(idi_img, fits_filename)
     t2 = time.time()
@@ -60,22 +59,21 @@ def read_speed(img_name):
     hdf_filename = join(output_dir_hdf, img_name+'.h5')
     hdf_comp_filename = join(output_dir_hdf, img_name+'_comp.h5')
 
-    a = pf.open(fits_filename)
-    print "DATA SHAPE: %s" % str(a[0].data.shape)
-    t1 = time.time()
-    for ii in range(a[0].data.shape[0]):
-        d = a[0].data[ii::4, ii::4, ii::4]
+    with pf.open(fits_filename) as a:
+        print("DATA SHAPE: {}".format(a[0].data.shape))
+        t1 = time.time()
+        for ii in range(a[0].data.shape[0]):
+            d = a[0].data[ii::4, ii::4, ...]
     t2 = time.time()
-    print "Time for FITS access: %2.2es" % (t2 - t1)
-
-    b = h5py.File(hdf_filename)
-    #print b.keys()
-    d = b["random_integers_23"]["DATA"]
-    t1 = time.time()
-    for ii in range(d.shape[0]):
-        d = a[0].data[ii::4, ii::4, ii::4]
+    print(("Time for FITS access: %2.2es" % (t2 - t1)))
+#%%
+    with h5py.File(hdf_filename,'r',libver='latest') as b:
+        k = b["random_integers_23"]["DATA"]
+        t1 = time.time()
+        for ii in range(d.shape[0]):
+            d = k[ii::4, ii::4, ...]
     t2 = time.time()
-    print "Time for HDF access: %2.2es" % (t2 - t1)
+    print(("Time for HDF access: %2.2es" % (t2 - t1)))
 
 if __name__== "__main__":
     # IMAGE DATA
@@ -85,34 +83,34 @@ if __name__== "__main__":
         'compression': 'bitshuffle'
         }
 
-    print "HDF5 compression options:"
+    print("HDF5 compression options:")
     for option, optval in hdf_opts.items():
-        print "    ", option, optval
+        print(("    ", option, optval))
 
     #file_info = create_image(img_name, img_data, hdf_opts=hdf_opts)
 
 
     # Generate data with differing levels of entropy
-    print "Generating random integers"
+    print("Generating random integers")
     max_int = 2**23
 
     #img_data = np.random.random_integers(-1*max_int, max_int, size=(1000, 1000, 1000)).astype('int32')
     #create_image(img_name, img_data, hdf_opts=hdf_opts)
 
     # Open example datasets
-    print "Reading..."
+    print("Reading...")
 
 
     for copy_num in range(1, 5):
         fname = "random_integers_%i.fits" % np.log2(max_int)
         fname2 = "random_integers_%i%i.fits" % (np.log2(max_int), copy_num)
-        print "cp fits_generated/%s fits_generated/%s" % (fname, fname2)
-        os.system("cp fits_generated/%s fits_generated/%s" % (fname, fname2))
+        print(("cp fits_generated/%s fits_generated/%s" % (fname, fname2)))
+        copy2(join('fits_generated',fname), join('fits_generated/',fname2))
 
-        fname = "random_integers_%i.fits" % np.log2(max_int)
-        fname2 = "random_integers_%i%i.fits" % (np.log2(max_int), copy_num)
-        print "cp hdf_generated/%s hdf_generated/%s" % (fname, fname2)
-        os.system("cp fits_generated/%s fits_generated/%s" % (fname, fname2))
+        fname = "random_integers_%i.h5" % np.log2(max_int)
+        fname2 = "random_integers_%i%i.h5" % (np.log2(max_int), copy_num)
+        print(("cp hdf_generated/%s hdf_generated/%s" % (fname, fname2)))
+        copy2(join('hdf_generated',fname), join('hdf_generated/',fname2))
 
     for copy_num in range(1, 5):
         img_name = "random_integers_%i%i" % (np.log2(max_int), copy_num)

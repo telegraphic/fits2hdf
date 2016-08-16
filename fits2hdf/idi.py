@@ -11,10 +11,10 @@ DataFrame object, and there are a few view / verify items also.
 """
 
 import numpy as np
-from astropy.extern import six
+import six
 from astropy.table import Table, Column, MaskedColumn
 from astropy.nddata import NDData
-from ordereddict import OrderedDict
+from collections import OrderedDict
 
 
 class VerificationError(Exception):
@@ -41,7 +41,10 @@ class IdiHeader(OrderedDict):
     """
     def __init__(self, values=None):
 
-        super(IdiHeader, self).__init__(values)
+        if values is not None:
+            super(IdiHeader, self).__init__(values)
+        else:
+            super(IdiHeader, self).__init__()
 
     def __repr__(self):
         to_print = ''

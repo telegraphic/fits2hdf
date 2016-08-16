@@ -1,14 +1,10 @@
 import os
-import sys
-
-sys.path.append('..')
+import subprocess
 
 from fits2hdf.io.fitsio import *
 from fits2hdf.io.hdfio import *
 from fits2hdf import idi
 import numpy as np
-from astropy.io import fits as pf
-import h5py
 
 import warnings
 
@@ -26,14 +22,17 @@ def test_fits2fits():
     if run_converter:
         print("Converting FITS files to FITS..")
         if overwrite_out:
-            os.system('fits2fits fits fits_out -w -x %s -o' % ext)
+            subprocess.check_call('fits2fits fits fits_out -w -x {} -o'.format(ext).split(' '))
         else:
-            os.system('fits2fits fits fits_out -w -x %s' % ext)
+            subprocess.check_call('fits2fits fits fits_out -w -x {}'.format(ext).split(' '))
         #os.system('python ../fits2hdf.py fits hdf -c gzip -x fz')
 
     if run_tests:
         for fits_file in os.listdir('fits'):
             if fits_file.endswith(ext):
+                if fits_file == 'DDTSUVDATA.fits':
+                    pass
+
                 fits_file_out = fits_file
                 print("\nFITS: %s" % fits_file)
                 print("FITS_OUT:  %s" % fits_file_out)

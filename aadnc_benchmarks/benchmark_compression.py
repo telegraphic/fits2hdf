@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 """
 benchmark compression
 ---------------------
@@ -5,24 +6,22 @@ benchmark compression
 Generate benchmarks for AANDC paper.
 
 """
-
 import numpy as np
 from os.path import join, getsize,exists
-import os, sys
+import os, subprocess
 from fits2hdf import idi
 from fits2hdf.io import hdfio, fitsio
 import time
-import glob
-
-from astropy.table import Table, Column
-
-
+from astropy.table import Table
 
 def load_fits(file_name):
     """ Load FITS file, create various things """
 
     output_dir_fits = 'fits_generated'
     output_dir_hdf  = 'hdf_generated'
+    _mkdir(output_dir_fits)
+    _mkdir(output_dir_hdf)
+
     idi_img = fitsio.read_fits(file_name)
 
     for hdu_name in idi_img:
@@ -33,7 +32,7 @@ def load_fits(file_name):
                     #print "CONVERTING %s TO INT" % col
                     hdu[col] = hdu[col].astype('int32')
                     if col == 'FLUX':
-                        print "FRUX"
+                        print("FRUX")
                         hdu[col] = hdu[col].data / 16
                     hdu[col].dtype = 'int32'
                     #print hdu[col].dtype
@@ -58,17 +57,21 @@ def load_fits(file_name):
             os.remove(fname)
 
 
-    print "\nWriting %s to disk" % img_name
+    print("\nWriting {} to \n{}\n{}".format(img_name,fits_filename,hdf_filename))
     t1 = time.time()
     fitsio.export_fits(idi_img, fits_filename)
     t2 = time.time()
+
     hdfio.export_hdf(idi_img, hdf_filename)
     t3 = time.time()
+
     hdfio.export_hdf(idi_img, hdf_comp_filename, **hdf_opts)
     t4 = time.time()
-    os.system("./fpack -table %s" % fits_filename)
+
+    subprocess.check_call(['fpack','-table',fits_filename])
     t5 = time.time()
-    os.system("gzip -c %s > %s.gz" % (fits_filename, fits_filename))
+
+    subprocess.check_call(['gzip','-k',fits_filename])
     t6 = time.time()
 
     dd = {
@@ -94,21 +97,21 @@ def load_fits(file_name):
     dd["weissman_hdf"] = weissman_score(dd["comp_fact_hdf"], dd["hdf_comp_time"], rh, th)
     dd["weissman_fits"] = weissman_score(dd["comp_fact_fits"], dd["fits_comp_time"], rh, th)
 
-    print "FITS file size:        %sB" % dd['fits_size']
-    print "HDF file size:         %sB" % dd['hdf_size']
-    print "FITS comp size:        %sB" % dd['fits_comp_size']
-    print "HDF comp size:         %sB" % dd['hdf_comp_size']
-    print "GZIP comp size:        %sB" % dd['gzip_comp_size']
-    print "FITS creation time:    %2.2fs" % dd['fits_time']
-    print "HDF  creation time:    %2.2fs" % dd['hdf_time']
-    print "FITS comp time:        %2.2fs" % dd['fits_comp_time']
-    print "HDF  comp time:        %2.2fs" % dd['hdf_comp_time']
-    print "GZIP comp time:        %2.2fs" % dd['gzip_comp_time']
-    print "FITS/FITS compression: %2.2fx" % dd['comp_fact_fits']
-    print "HDF/FITS compression:  %2.2fx" % dd['comp_fact_hdf']
-    print "GZIP/FITS compression: %2.2fx" % dd['comp_fact_gzip']
-    print "FITS weissman score:   %2.2f" % dd['weissman_fits']
-    print "HDF  weissman score:   %2.2f" % dd['weissman_hdf']
+    print("FITS file size:        %sB" % dd['fits_size'])
+    print("HDF file size:         %sB" % dd['hdf_size'])
+    print("FITS comp size:        %sB" % dd['fits_comp_size'])
+    print("HDF comp size:         %sB" % dd['hdf_comp_size'])
+    print("GZIP comp size:        %sB" % dd['gzip_comp_size'])
+    print("FITS creation time:    %2.2fs" % dd['fits_time'])
+    print("HDF  creation time:    %2.2fs" % dd['hdf_time'])
+    print("FITS comp time:        %2.2fs" % dd['fits_comp_time'])
+    print("HDF  comp time:        %2.2fs" % dd['hdf_comp_time'])
+    print("GZIP comp time:        %2.2fs" % dd['gzip_comp_time'])
+    print("FITS/FITS compression: %2.2fx" % dd['comp_fact_fits'])
+    print("HDF/FITS compression:  %2.2fx" % dd['comp_fact_hdf'])
+    print("GZIP/FITS compression: %2.2fx" % dd['comp_fact_gzip'])
+    print("FITS weissman score:   %2.2f" % dd['weissman_fits'])
+    print("HDF  weissman score:   %2.2f" % dd['weissman_hdf'])
 
 
     return dd
@@ -118,6 +121,9 @@ def create_image(name, data, hdf_opts={}):
 
     output_dir_fits = 'fits_generated'
     output_dir_hdf  = 'hdf_generated'
+    _mkdir(output_dir_fits)
+    _mkdir(output_dir_hdf)
+
     idi_img = idi.IdiHdulist()
     idi_img.add_image_hdu(img_name, data=data)
 
@@ -135,17 +141,22 @@ def create_image(name, data, hdf_opts={}):
         if exists(fname):
             os.remove(fname)
 
-    print "\nWriting %s to disk" % img_name
+    print("\nWriting {} to \n{}\n{}".format(img_name,fits_filename,hdf_filename))
     t1 = time.time()
     fitsio.export_fits(idi_img, fits_filename)
+    assert exists(fits_filename)
     t2 = time.time()
+
     hdfio.export_hdf(idi_img, hdf_filename)
     t3 = time.time()
+
     hdfio.export_hdf(idi_img, hdf_comp_filename, **hdf_opts)
     t4 = time.time()
-    os.system("./fpack -table %s" % fits_filename)
+
+    subprocess.check_call(['fpack','-table',fits_filename])
     t5 = time.time()
-    os.system("gzip -c %s > %s.gz" % (fits_filename, fits_filename))
+
+    subprocess.check_call(['gzip','-k',fits_filename])
     t6 = time.time()
 
     dd = {
@@ -171,21 +182,21 @@ def create_image(name, data, hdf_opts={}):
     dd["weissman_hdf"] = weissman_score(dd["comp_fact_hdf"], dd["hdf_comp_time"], rh, th)
     dd["weissman_fits"] = weissman_score(dd["comp_fact_fits"], dd["fits_comp_time"], rh, th)
 
-    print "FITS file size:        %sB" % dd['fits_size']
-    print "HDF file size:         %sB" % dd['hdf_size']
-    print "FITS comp size:        %sB" % dd['fits_comp_size']
-    print "HDF comp size:         %sB" % dd['hdf_comp_size']
-    print "GZIP comp size:        %sB" % dd['gzip_comp_size']
-    print "FITS creation time:    %2.2fs" % dd['fits_time']
-    print "HDF  creation time:    %2.2fs" % dd['hdf_time']
-    print "FITS comp time:        %2.2fs" % dd['fits_comp_time']
-    print "HDF  comp time:        %2.2fs" % dd['hdf_comp_time']
-    print "GZIP comp time:        %2.2fs" % dd['gzip_comp_time']
-    print "FITS/FITS compression: %2.2fx" % dd['comp_fact_fits']
-    print "HDF/FITS compression:  %2.2fx" % dd['comp_fact_hdf']
-    print "GZIP/FITS compression: %2.2fx" % dd['comp_fact_gzip']
-    print "FITS weissman score:   %2.2f" % dd['weissman_fits']
-    print "HDF  weissman score:   %2.2f" % dd['weissman_hdf']
+    print("FITS file size:        %sB" % dd['fits_size'])
+    print("HDF file size:         %sB" % dd['hdf_size'])
+    print("FITS comp size:        %sB" % dd['fits_comp_size'])
+    print("HDF comp size:         %sB" % dd['hdf_comp_size'])
+    print("GZIP comp size:        %sB" % dd['gzip_comp_size'])
+    print("FITS creation time:    %2.2fs" % dd['fits_time'])
+    print("HDF  creation time:    %2.2fs" % dd['hdf_time'])
+    print("FITS comp time:        %2.2fs" % dd['fits_comp_time'])
+    print("HDF  comp time:        %2.2fs" % dd['hdf_comp_time'])
+    print("GZIP comp time:        %2.2fs" % dd['gzip_comp_time'])
+    print("FITS/FITS compression: %2.2fx" % dd['comp_fact_fits'])
+    print("HDF/FITS compression:  %2.2fx" % dd['comp_fact_hdf'])
+    print("GZIP/FITS compression: %2.2fx" % dd['comp_fact_gzip'])
+    print("FITS weissman score:   %2.2f" % dd['weissman_fits'])
+    print("HDF  weissman score:   %2.2f" % dd['weissman_hdf'])
 
 
     return dd
@@ -204,21 +215,30 @@ def weissman_score(r, t, rh, th):
 
     return W
 
+def _mkdir(d):
+    """
+    python2 doesn't have exist_ok
+    """
+    try:
+        os.mkdir(d)
+    except OSError:
+        pass
+
 if __name__== "__main__":
     # IMAGE DATA
 
-    print "Generating data.."
+    print("Generating data..")
     img_name = "sin_outer"
     d = np.linspace(1e5, 1e6, 1024)
     img_data = np.sin(np.outer(d, d))
 
     hdf_opts = {
-        'compression': 'bitshuffle'
+        'compression': 'shuffle'
         }
 
-    print "HDF5 compression options:"
+    print("HDF5 compression options:")
     for option, optval in hdf_opts.items():
-        print "    ", option, optval
+        print("    ", option, optval)
 
     #file_info = create_image(img_name, img_data, hdf_opts=hdf_opts)
 
@@ -234,6 +254,7 @@ if __name__== "__main__":
 
     # Generate data with differing levels of entropy
     for max_int in (2**7, 2**15, 2**23, 2**31):
+        print(max_int)
         img_name = "random_integers_%i" % np.log2(max_int)
         img_data = np.random.random_integers(-1*max_int, max_int, size=(8192, 8192)).astype('int32')
         file_info = create_image(img_name, img_data, hdf_opts=hdf_opts)
@@ -251,5 +272,5 @@ if __name__== "__main__":
     tbl.write("generated_data_report.html", format="html")
     tbl.write("generated_data_report.tex", format="latex")
 
-    print tbl
+    print(tbl)
     #tbl.show_in_browser()
