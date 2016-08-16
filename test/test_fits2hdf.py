@@ -13,7 +13,7 @@ import h5py
 import warnings
 
 def test_fits2hdf():
-    download_fits = False
+    download_fits = True
     run_converter = True
     run_tests     = True
     ext = 'fits'
