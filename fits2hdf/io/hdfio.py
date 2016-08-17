@@ -10,6 +10,7 @@ from astropy.io import fits as pf
 import numpy as np
 import h5py
 
+import os
 from ..idi import *
 from .. import idi
 from . import hdfcompress as bs
@@ -60,7 +61,7 @@ def write_headers(hduobj, idiobj, verbosity=0):
             hduobj.attrs[key+"_COMMENT"] = np.array([comment])
     return hduobj
 
-def read_hdf(infile, mode='r+', verbosity=0):
+def read_hdf(infile, mode='r+', root_group="/", verbosity=0):
     """ Read and load contents of an HDF file
 
     Parameters
@@ -74,7 +75,9 @@ def read_hdf(infile, mode='r+', verbosity=0):
     """
 
     hdulist = idi.IdiHdulist()
+
     h = h5py.File(infile, mode=mode)
+
     hdulist.hdf = h
 
     pp = PrintLog(verbosity=verbosity)
@@ -199,7 +202,7 @@ def read_hdf(infile, mode='r+', verbosity=0):
     return hdulist
 
 
-def export_hdf(idi_hdu, outfile, table_type='DATA_GROUP', **kwargs):
+def export_hdf(idi_hdu, outfile, root_group="/", table_type='DATA_GROUP', **kwargs):
     """ Export to HDF file
 
 
@@ -227,6 +230,18 @@ def export_hdf(idi_hdu, outfile, table_type='DATA_GROUP', **kwargs):
 
     if not table_type in ('DATA_GROUP', 'TABLE'):
         raise RuntimeError("Table output must be DATA_GROUP or TABLE, not %s" % table_type)
+
+    if os.path.exists(outfile):
+        _h = h5py.File(outfile, mode='r+')
+    else:
+        _h = h5py.File(outfile, mode='w')
+
+    if root_group != "/":
+        if root_group in _h.keys():
+            del _h[root_group]
+        h = _h.create_group(root_group)
+    else:
+        h = _h
 
     pp = PrintLog(verbosity=verbosity)
 
