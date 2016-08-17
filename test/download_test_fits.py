@@ -38,7 +38,7 @@ filelist = [
     'http://fits.gsfc.nasa.gov/samples/UITfuv2582gc.fits',
     'http://fits.gsfc.nasa.gov/samples/IUElwp25637mxlo.fits',
     'http://fits.gsfc.nasa.gov/samples/EUVEngc4151imgx.fits',
-    'http://fits.gsfc.nasa.gov/samples/DDTSUVDATA.fits',
+    #'http://fits.gsfc.nasa.gov/samples/DDTSUVDATA.fits',
     'http://fits.gsfc.nasa.gov/samples/testkeys.fits'
     ]
 

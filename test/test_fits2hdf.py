@@ -13,14 +13,17 @@ import h5py
 import warnings
 
 def test_fits2hdf():
-    download_fits = False
+    download_fits = True
     run_converter = True
     run_tests     = True
     ext = 'fits'
 
+    if download_fits:
+        os.system('python download_test_fits.py')
+
     commands_to_test = [
         'fits2hdf fits hdf -c gzip -x fits -v 0',
-        'fits2hdf fits hdf -c bitshuffle -x fits -v 0 -t',
+        #'fits2hdf fits hdf -c bitshuffle -x fits -v 0 -t',
         'fits2hdf fits hdf -c lzf -x fits -v 0 -t',
         'fits2hdf fits hdf -c lzf -C -S -x fits -v 0',
         'fits2hdf fits hdf -c lzf -C -S -x fits -v 0 -t',
@@ -32,8 +35,6 @@ def test_fits2hdf():
     #NB : will fail
 
     for cmd2test in commands_to_test:
-        if download_fits:
-            os.system('python download_test_fits.py')
         if run_converter:
             print("")
             print("--------")
