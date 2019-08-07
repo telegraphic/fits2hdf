@@ -20,7 +20,7 @@ def test_fits2hdf():
 
     commands_to_test = [
         'fits2hdf fits hdf -c gzip -x fits -v 0',
-        'fits2hdf fits hdf -c bitshuffle -x fits -v 0 -t',
+        #'fits2hdf fits hdf -c bitshuffle -x fits -v 0 -t',
         'fits2hdf fits hdf -c lzf -x fits -v 0 -t',
         'fits2hdf fits hdf -c lzf -C -S -x fits -v 0',
         'fits2hdf fits hdf -c lzf -C -S -x fits -v 0 -t',
@@ -162,6 +162,3 @@ def test_fits2hdf():
 
 if __name__ == '__main__':
     test_fits2hdf()
-
-
-

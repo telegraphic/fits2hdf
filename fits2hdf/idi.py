@@ -231,8 +231,8 @@ class IdiTableHdu(Table):
             self.header = IdiHeader()
         super(IdiTableHdu, self).__init__(*args[1:], **kwargs)
 
-        # Add self.data item, which is missing in Table()
-        self.data = self._data
+        # # Add self.data item, which is missing in Table()
+        # self.data = None
 
 
 class IdiColumn(Column):
@@ -268,11 +268,10 @@ class IdiColumn(Column):
     meta : dict-like or None
         Meta-data associated with the column
     """
-    def __init__(self, *args, **kwargs):
-        self.name = args[0]
-        #print self.name
-        args = args[1:]
-        super(IdiColumn, self).__init__(*args, **kwargs)
+    # def __init__(self, *args, **kwargs):
+    #     self.name = args[0]
+    #     args = args[1:]
+    #     super(IdiColumn, self).__init__(*args, **kwargs)
 
     def __new__(cls, name, data=None,
                 dtype=None, shape=(), length=0,
@@ -390,7 +389,3 @@ class IdiHdulist(OrderedDict):
         """
         self[name] = IdiPrimaryHdu(name, header=header,
                                 history=history, comment=comment)
-
-
-
-

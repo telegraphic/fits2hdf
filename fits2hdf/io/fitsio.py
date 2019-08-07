@@ -163,7 +163,7 @@ def numpy_dtype_lookup(numpy_dtype):
             np.complex64: 'complex64',
             np.complex128: 'complex128',
             np.bool_:      'bool',
-            np.string_:    'string'
+            np.string_:    'str'
         }
 
     new_dtype = np.dtype(dtype_dict.get(np_type))
@@ -312,7 +312,7 @@ def read_fits(infile, verbosity=0):
 
     pp = PrintLog(verbosity=verbosity)
     ff = pf.open(infile)
-    
+
 
     hdul_idi = idi.IdiHdulist()
 
