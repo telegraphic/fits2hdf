@@ -1,4 +1,4 @@
-fits2hdf
+fits2hdf [![Build Status](https://travis-ci.org/EiffL/fits2hdf.svg?branch=master)](https://travis-ci.org/EiffL/fits2hdf)
 ========
 
 `fits2hdf` is a conversion to utility to port FITS files to Hierarchical Data Format (HDF5) 
