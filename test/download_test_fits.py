@@ -37,7 +37,7 @@ filelist = [
     'http://fits.gsfc.nasa.gov/samples/FGSf64y0106m_a1f.fits',
     'http://fits.gsfc.nasa.gov/samples/UITfuv2582gc.fits',
     'http://fits.gsfc.nasa.gov/samples/IUElwp25637mxlo.fits',
-    'http://fits.gsfc.nasa.gov/samples/EUVEngc4151imgx.fits',
+    #'http://fits.gsfc.nasa.gov/samples/EUVEngc4151imgx.fits', also refuses  to validate for astropy
     #'http://fits.gsfc.nasa.gov/samples/DDTSUVDATA.fits', This files has tables which astropy fails to load, so....
     'http://fits.gsfc.nasa.gov/samples/testkeys.fits'
     ]
