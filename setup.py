@@ -24,4 +24,5 @@ setup(name='fits2hdf',
       packages=find_packages(),
       zip_safe=False,
       entry_points=entry_points,
+      python_requires='>=3.5',
       )
