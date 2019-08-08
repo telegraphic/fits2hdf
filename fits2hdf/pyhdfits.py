@@ -39,7 +39,7 @@ def open(*args, **kwargs):
     """
     file_name = args[0]
     # Checking for HDF5 group
-    if isinstance(file_name, h5py.group):
+    if isinstance(file_name, h5py.Group):
         file_type = 'hdf'
     else:
         file_type = check_file_type(file_name)
