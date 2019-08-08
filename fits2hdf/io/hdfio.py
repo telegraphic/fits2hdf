@@ -50,14 +50,14 @@ def write_headers(hduobj, idiobj, verbosity=0):
 
         is_comment = key.endswith("_COMMENT")
         is_table   = key[:5] in restricted_table_keywords
-        is_table = is_table or key[:4] == "TDIM" or key == "TFIELDS"
+        is_table = is_table or key[:4] == b"TDIM" or key == b"TFIELDS"
         is_basic = key in restricted_header_keywords
         is_hdf   = key in restricted_hdf_keywords
         if is_comment or is_table or is_basic or is_hdf:
             pass
         else:
-            hduobj.attrs[key] = np.array([value])
-            hduobj.attrs[key+"_COMMENT"] = np.array([comment])
+            hduobj.attrs[key] = value
+            hduobj.attrs[key+"_COMMENT"] = comment
     return hduobj
 
 def read_hdf(infile, mode='r+', verbosity=0):
@@ -65,8 +65,8 @@ def read_hdf(infile, mode='r+', verbosity=0):
 
     Parameters
     ----------
-    infile: str
-        file name of input file to read
+    infile: str or hdf group
+        file name of input file to read, or hdf5 group
     mode: str
         file read mode. Defaults to 'r+'
     verbosity: int
@@ -74,7 +74,13 @@ def read_hdf(infile, mode='r+', verbosity=0):
     """
 
     hdulist = idi.IdiHdulist()
-    h = h5py.File(infile, mode=mode)
+    is_file = False
+    if isinstance(infile, h5py.Group):
+        h = infile
+    else:
+        h = h5py.File(infile, mode=mode)
+        is_file = True
+
     hdulist.hdf = h
 
     pp = PrintLog(verbosity=verbosity)
@@ -87,7 +93,7 @@ def read_hdf(infile, mode='r+', verbosity=0):
     except KeyError:
         pp.warn("No CLASS defined in HDF5 file.")
 
-    if "HDFITS" not in cls:
+    if b"HDFITS" not in cls:
         pp.warn("CLASS %s: Not an HDFITS file." % cls[0])
 
     # Read the order of HDUs from file
@@ -104,7 +110,7 @@ def read_hdf(infile, mode='r+', verbosity=0):
         h_vals = {}
         for key, values in group.attrs.items():
             if key not in restricted_hdf_keywords:
-                h_vals[key] = np.asscalar(values[0])
+                h_vals[key] = values
                 #h_vals[key+"_COMMENT"] = values[1]
 
         #hk = group.attrs.keys()
@@ -123,36 +129,40 @@ def read_hdf(infile, mode='r+', verbosity=0):
         #print header.vals.keys()
 
         pp.pp(group.keys())
-        if "DATA" not in group:
+        if b"DATA" not in group:
             pp.h3("Adding Primary %s" % gname)
             hdulist.add_primary_hdu(gname, header=h_vals, history=h_history, comment=h_comment)
 
-        elif group["DATA"].attrs["CLASS"] == "TABLE":
+        elif group["DATA"].attrs["CLASS"] == b"TABLE":
             pp.h3("Adding Table %s" % gname)
             #self.add_table(gname)
-            data = IdiTableHdu(gname)
+            data = None
 
-            for col_num in range(len(group["DATA"].dtype.fields)):
-                col_name = group["DATA"].attrs["FIELD_%i_NAME" % col_num][0]
-                try:
-                    col_units = group["DATA"].attrs["FIELD_%i_UNITS" % col_num][0]
-                except KeyError:
-                    col_units = None
+            if group["DATA"].dtype.fields is not None:
+                data = IdiTableHdu(gname)
+                for col_num in range(len(group["DATA"].dtype.fields)):
+                    col_name = group["DATA"].attrs["FIELD_%i_NAME" % col_num][0]
+                    if isinstance(col_name, bytes):
+                        col_name = col_name.decode('utf-8')
+                    try:
+                        col_units = group["DATA"].attrs["FIELD_%i_UNITS" % col_num][0]
+                    except KeyError:
+                        col_units = None
 
-                pp.debug("Reading col %s > %s" %(gname, col_name))
-                dset = group["DATA"][col_name][:]
+                    pp.debug("Reading col %s > %s" %(gname, col_name))
+                    dset = group["DATA"][col_name][:]
 
-                #self[gname].data[dname] = dset[:]
-                #self[gname].n_rows = dset.shape[0]
+                    #self[gname].data[dname] = dset[:]
+                    #self[gname].n_rows = dset.shape[0]
 
-                idi_col = idi.IdiColumn(col_name, dset[:], unit=col_units)
-                data.add_column(idi_col)
-                col_num += 1
+                    idi_col = idi.IdiColumn(col_name, dset[:], unit=col_units)
+                    data.add_column(idi_col)
+                    col_num += 1
 
             hdulist.add_table_hdu(gname,
                            header=h_vals, data=data, history=h_history, comment=h_comment)
 
-        elif group["DATA"].attrs["CLASS"] == "DATA_GROUP":
+        elif group["DATA"].attrs["CLASS"] == b"DATA_GROUP":
             pp.h3("Adding data group %s" % gname)
             data = IdiTableHdu(gname)
 
@@ -165,7 +175,6 @@ def read_hdf(infile, mode='r+', verbosity=0):
                 col_order[pos] = col_name
 
             #print col_order
-
             for pos, col_name in col_order.items():
                 pp.debug("Reading col %s > %s" %(gname, col_name))
 
@@ -182,7 +191,7 @@ def read_hdf(infile, mode='r+', verbosity=0):
             hdulist.add_table_hdu(gname,
                            header=h_vals, data=data, history=h_history, comment=h_comment)
 
-        elif group["DATA"].attrs["CLASS"] == "IMAGE":
+        elif group["DATA"].attrs["CLASS"] == b"IMAGE":
             pp.h3("Adding Image %s" % gname)
             hdulist.add_image_hdu(gname,
                            header=h_vals, data=group["DATA"][:], history=h_history, comment=h_comment)
@@ -194,7 +203,8 @@ def read_hdf(infile, mode='r+', verbosity=0):
         #for hkey, hval in group["HEADER"].attrs.items():
         #    self[gname].header.vals[hkey] = hval
 
-    h.close()
+    if is_file:
+        h.close()
 
     return hdulist
 
@@ -251,10 +261,9 @@ def export_hdf(idi_hdu, outfile, table_type='DATA_GROUP', **kwargs):
             if isinstance(idi_hdu[gkey], IdiTableHdu) and table_type == 'TABLE':
                 try:
                     dd = idi_hdu[gkey]
-                    dd_data = dd._data
 
                     if dd is not None:
-                        dset = bs.create_dataset(gg, "DATA", dd_data, **kwargs)
+                        dset = bs.create_dataset(gg, "DATA", dd, **kwargs)
                         dset.attrs["CLASS"] = np.string_(["TABLE"])
 
                         col_num = 0
@@ -268,18 +277,18 @@ def export_hdf(idi_hdu, outfile, table_type='DATA_GROUP', **kwargs):
                                 col_units = None
 
                             if col_dtype.type is np.string_:
-                                dset.attrs["FIELD_%i_FILL" % col_num] = np.array([''])
+                                dset.attrs["FIELD_%i_FILL" % col_num] = np.string_([''])
                             else:
                                 dset.attrs["FIELD_%i_FILL" % col_num] = np.array([0])
-                            dset.attrs["FIELD_%i_NAME" % col_num] = np.array([col_name])
+                            dset.attrs["FIELD_%i_NAME" % col_num] = np.string_([col_name])
 
                             if col_units:
-                                dset.attrs["FIELD_%i_UNITS" % col_num] = np.array([col_units])
+                                dset.attrs["FIELD_%i_UNITS" % col_num] = np.string_([col_units])
                             col_num += 1
 
                         dset.attrs["NROWS"]   = np.array([dd.columns[0].shape[0]])
                         dset.attrs["VERSION"] = np.array([2.6])     #TODO: Move this version no
-                        dset.attrs["TITLE"]   = np.array([gkey])
+                        dset.attrs["TITLE"]   = np.string_([gkey])
 
                 except:
                     pp.err("%s" % gkey)
@@ -290,7 +299,7 @@ def export_hdf(idi_hdu, outfile, table_type='DATA_GROUP', **kwargs):
                 try:
                     col_num = 0
                     tbl_group = gg.create_group("DATA")
-                    tbl_group.attrs["CLASS"] = np.array(["DATA_GROUP"])
+                    tbl_group.attrs["CLASS"] = np.string_(["DATA_GROUP"])
 
                     for dkey, dval in idi_hdu[gkey].columns.items():
                         data = dval.data
@@ -299,10 +308,10 @@ def export_hdf(idi_hdu, outfile, table_type='DATA_GROUP', **kwargs):
 
                         dset = bs.create_dataset(tbl_group, dkey, data, **kwargs)
 
-                        dset.attrs["CLASS"] = np.array(["COLUMN"])
+                        dset.attrs["CLASS"] = np.string_(["COLUMN"])
                         dset.attrs["COLUMN_ID"] = np.array([col_num])
                         if dval.unit:
-                            dset.attrs["UNITS"] = np.array([str(dval.unit)])
+                            dset.attrs["UNITS"] = np.string_([str(dval.unit)])
                         col_num += 1
                 except:
                     pp.err("%s > %s" % (gkey, dkey))
@@ -338,6 +347,6 @@ def export_hdf(idi_hdu, outfile, table_type='DATA_GROUP', **kwargs):
                 unicode_dt = h5py.special_dtype(vlen=str)
 
             if idi_hdu[gkey].comment:
-                gg.create_dataset("COMMENT", data=idi_hdu[gkey].comment, dtype=unicode_dt)
+                gg.create_dataset("COMMENT", data=np.string_(idi_hdu[gkey].comment), dtype=unicode_dt)
             if idi_hdu[gkey].history:
-                gg.create_dataset("HISTORY", data=idi_hdu[gkey].history, dtype=unicode_dt)
+                gg.create_dataset("HISTORY", data=np.string_(idi_hdu[gkey].history), dtype=unicode_dt)

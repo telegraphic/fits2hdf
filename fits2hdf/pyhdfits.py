@@ -17,6 +17,7 @@ So that both HDF5 and FITS files can be read transparently.
 """
 
 from astropy.io import fits
+import h5py
 
 from .io.hdfio import read_hdf
 from .io.fitsio import create_fits
@@ -37,7 +38,12 @@ def open(*args, **kwargs):
     #TODO: Do this slightly different, to avoid the open() issue
     """
     file_name = args[0]
-    file_type = check_file_type(file_name)
+    # Checking for HDF5 group
+    if isinstance(file_name, h5py.Group):
+        file_type = 'hdf'
+    else:
+        file_type = check_file_type(file_name)
+
     if file_type == 'fits':
         return fits.open(*args, **kwargs)
     elif file_type == 'hdf':

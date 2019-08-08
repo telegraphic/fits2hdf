@@ -1,4 +1,6 @@
-fits2hdf
+fits2hdf [![Build Status](https://travis-ci.org/EiffL/fits2hdf.svg?branch=master)](https://travis-ci.org/EiffL/fits2hdf) 
+[![astropy](http://img.shields.io/badge/powered%20by-AstroPy-orange.svg?style=flat)](http://www.astropy.org/)
+[![Documentation Status](https://readthedocs.org/projects/fits2hdf/badge/?version=latest)](https://readthedocs.org/projects/fits2hdf/?badge=latest)
 ========
 
 `fits2hdf` is a conversion to utility to port FITS files to Hierarchical Data Format (HDF5) 
@@ -30,8 +32,6 @@ would be swell if you could cite the
 * [Astropy](https://www.astropy.org), a community-developed core Python package for Astronomy].
 * [h5py](http://www.h5py.org/), a Pythonic interface to the HDF5 binary data format.
 
-[![astropy](http://img.shields.io/badge/powered%20by-AstroPy-orange.svg?style=flat)](http://www.astropy.org/)
-[![Documentation Status](https://readthedocs.org/projects/fits2hdf/badge/?version=latest)](https://readthedocs.org/projects/fits2hdf/?badge=latest)
 
 
 

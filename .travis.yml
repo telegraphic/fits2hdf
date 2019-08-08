@@ -1,0 +1,17 @@
+language: python
+python:
+  - "3.5"
+  - "3.6"
+
+cache:
+  directories:
+  - fits
+
+# command to install dependencies
+install:
+  - pip install -r pip-requirements
+  - pip install .
+
+# command to run tests
+script:
+  - nosetests

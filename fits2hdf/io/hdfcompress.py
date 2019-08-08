@@ -10,7 +10,7 @@ Helper functions for writing bitshuffled compressed datatsets
 import numpy as np
 import h5py
 from h5py import h5f, h5d, h5z, h5t, h5s, filters
-
+from ..idi import IdiTableHdu
 from .. import printlog
 
 try:
@@ -63,19 +63,19 @@ def create_compressed(hgroup, name, data, **kwargs):
     data:   data to write
     chunks: chunk size
     """
-    
+
     # Check explicitly for bitshuffle, as it is not part of h5py
     compression = ''
     if 'compression' in kwargs:
         compression = kwargs['compression']
-    
+
     #print name, shape, dtype, chunks
     if compression == 'bitshuffle' and USE_BITSHUFFLE:
-        
+
         if 'chunks' not in kwargs:
             kwargs['chunks'] = guess_chunk(data.shape)
             chunks = kwargs['chunks']
-            
+
         #print "Creating bitshuffled dataset %s" % hgroup
         h5.create_dataset(hgroup, name, data.shape, data.dtype, chunks,
                           filter_pipeline=(32008,),
@@ -125,7 +125,7 @@ def create_dataset(hgroup, name, data, **kwargs):
 
     #print name, str(data.dtype)
     #print data.dtype.type, data.dtype.type in np_types
-    if data.dtype.type in np_types:
+    if data.dtype.type in np_types and not isinstance(data, IdiTableHdu):
         pp.debug("Creating compressed %s" % name)
         dset = create_compressed(hgroup, name, data, **kwargs)
     else:
@@ -137,4 +137,3 @@ def create_dataset(hgroup, name, data, **kwargs):
             raise
 
     return dset
-
