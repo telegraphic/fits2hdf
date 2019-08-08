@@ -12,6 +12,11 @@ setup.py -- setup script for fits2hdf package
 """
 from setuptools import setup, find_packages
 
+with open("README.md", "r") as fh:
+    long_description = fh.read()
+
+version = '1.1.1'
+
 # create entry points
 # see http://astropy.readthedocs.org/en/latest/development/scripts.html
 entry_points = {
@@ -22,15 +27,18 @@ entry_points = {
     }
 
 setup(name='fits2hdf',
-      version='1.1',
+      version=version,
       description='FITS to HDF5 conversion utility',
+      long_description=long_description,
+      long_description_content_type='text/markdown',
       install_requires=['h5py', 'astropy', 'colorama'],
       url='http://github.com/telegraphic/fits2hdf',
       author='Danny Price',
-      author_email='dancpr [at] berkeley [dot] edu',
+      author_email='dancpr@berkeley.edu',
       license='MIT',
       packages=find_packages(),
       zip_safe=False,
       entry_points=entry_points,
       python_requires='>=3.5',
+      download_url='https://github.com/telegraphic/hickle/archive/%s.tar.gz' % version,
       )
