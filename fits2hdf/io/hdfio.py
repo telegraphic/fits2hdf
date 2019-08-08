@@ -65,8 +65,8 @@ def read_hdf(infile, mode='r+', verbosity=0):
 
     Parameters
     ----------
-    infile: str
-        file name of input file to read
+    infile: str or hdf group
+        file name of input file to read, or hdf5 group
     mode: str
         file read mode. Defaults to 'r+'
     verbosity: int
@@ -74,7 +74,13 @@ def read_hdf(infile, mode='r+', verbosity=0):
     """
 
     hdulist = idi.IdiHdulist()
-    h = h5py.File(infile, mode=mode)
+    is_file = False
+    if isinstance(infile, h5py.Group):
+        h = infile
+    else:
+        h = h5py.File(infile, mode=mode)
+        is_file = True
+
     hdulist.hdf = h
 
     pp = PrintLog(verbosity=verbosity)
@@ -169,7 +175,6 @@ def read_hdf(infile, mode='r+', verbosity=0):
                 col_order[pos] = col_name
 
             #print col_order
-
             for pos, col_name in col_order.items():
                 pp.debug("Reading col %s > %s" %(gname, col_name))
 
@@ -198,7 +203,8 @@ def read_hdf(infile, mode='r+', verbosity=0):
         #for hkey, hval in group["HEADER"].attrs.items():
         #    self[gname].header.vals[hkey] = hval
 
-    h.close()
+    if is_file:
+        h.close()
 
     return hdulist
 
