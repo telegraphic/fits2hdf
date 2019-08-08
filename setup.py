@@ -1,3 +1,11 @@
+# To increment version
+# Check you have ~/.pypirc filled in
+# git tag x.y.z
+# git push && git push --tags
+# rm -rf dist; python setup.py sdist bdist_wheel
+# TEST: twine upload --repository-url https://test.pypi.org/legacy/ dist/*
+# twine upload dist/*
+
 #!/usr/bin/env python
 """
 setup.py -- setup script for fits2hdf package
@@ -14,12 +22,12 @@ entry_points = {
     }
 
 setup(name='fits2hdf',
-      version='1.0',
+      version='1.1',
       description='FITS to HDF5 conversion utility',
       install_requires=['h5py', 'astropy', 'colorama'],
       url='http://github.com/telegraphic/fits2hdf',
       author='Danny Price',
-      author_email='dprice@cfa.harvard.edu',
+      author_email='dancpr [at] berkeley [dot] edu',
       license='MIT',
       packages=find_packages(),
       zip_safe=False,
