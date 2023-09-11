@@ -9,19 +9,14 @@ Getting started
 Installation
 ------------
 
-To install, you first need to clone the directory from github::
+To install this package, it is possible to use pip::
 
-    git clone https://github.com/telegraphic/fits2hdf
-
-and then run::
-
-    python setup.py install
+    pip install git+https://github.com/telegraphic/fits2hdf.git
     
 from the command line. You'll need 
 `astropy <http://www.astropy.org/>`_ and `h5py <http://www.h5py.org/>`_ to be installed. If you want to
 use `bitshuffle <https://github.com/kiyo-masui/bitshuffle>`_ compression (good for radio astronomy data), you'll need to install that too.
 
-Installation through ``pip`` will likely be added in the future.
 
 Command line usage
 ------------------

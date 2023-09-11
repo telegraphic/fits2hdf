@@ -15,7 +15,7 @@ from setuptools import setup, find_packages
 with open("README.md", "r") as fh:
     long_description = fh.read()
 
-version = '1.1.1'
+version = '1.1.2'
 
 # create entry points
 # see http://astropy.readthedocs.org/en/latest/development/scripts.html
@@ -31,7 +31,7 @@ setup(name='fits2hdf',
       description='FITS to HDF5 conversion utility',
       long_description=long_description,
       long_description_content_type='text/markdown',
-      install_requires=['h5py', 'astropy', 'colorama'],
+      install_requires=['h5py', 'astropy', 'colorama', 'six'],
       url='http://github.com/telegraphic/fits2hdf',
       author='Danny Price',
       author_email='dancpr@berkeley.edu',

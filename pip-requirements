@@ -3,4 +3,5 @@ astropy
 colorterm
 colorama
 h5py
+six
 
